@@ -3,15 +3,26 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
+public enum PlayerState
+{
+    walk,
+    attack,
+    interact
+}
 public class PlayerMovement : MonoBehaviour
 {
+    public PlayerState currentState;
     public float moveSpeed;
+    public bool disableMovement;
     public Animator animator;
     private Vector2 moveDirection;
     public Rigidbody2D rb;
+    
     private void Awake()
     {
+        currentState = PlayerState.walk;
         rb = GetComponent<Rigidbody2D>();
+        animator.SetFloat("LastVert", -1);
     }
     void ProcessInputs()
     {
@@ -24,13 +35,30 @@ public class PlayerMovement : MonoBehaviour
         animator.SetFloat("Vertical", moveDirection.y);
         animator.SetFloat("Magnitude", moveDirection.magnitude);
 
-        if (animator.GetFloat("LastHorizon") > 0.001 & animator.GetFloat("LastHorizon") < -0.001)
+        if (moveX > 0.001 || moveX < -0.001)
         {
-            animator.SetFloat("LastHorizon", moveDirection.x);
+            if (!disableMovement)
+            {
+                if (Mathf.Abs(moveDirection.x) > Mathf.Abs(moveDirection.y))
+                {
+                    animator.SetFloat("LastHorizon", moveDirection.x);
+                    animator.SetFloat("LastVert", 0);
+                }
+                
+            }
+            
         }
-        if (animator.GetFloat("LastVert") > 0.001 & animator.GetFloat("LastVert") < -0.001)
+        if (moveY > 0.001 || moveY < -0.001)
         {
-            animator.SetFloat("LastVert", moveDirection.y);
+            if (!disableMovement)
+            {
+                if (Mathf.Abs(moveDirection.x) <= Mathf.Abs(moveDirection.y))
+                {
+                    animator.SetFloat("LastHorizon", 0);
+                    animator.SetFloat("LastVert", moveDirection.y);
+                }
+        
+            }
         }
 
     }
@@ -38,14 +66,25 @@ public class PlayerMovement : MonoBehaviour
     void Update()
     {
         // Inputs
-        ProcessInputs(); 
+        ProcessInputs();
+        
+        
         //transform.position = transform.position + movement * Time.deltaTime;
 
     }
 
     void Move()
     {
-        rb.velocity = new Vector2(moveDirection.x * moveSpeed, moveDirection.y * moveSpeed);
+        if (!disableMovement)
+        {
+            rb.velocity = new Vector2(moveDirection.x * moveSpeed, moveDirection.y * moveSpeed);
+        }
+        else
+        {
+            rb.velocity = new Vector2(0, 0);
+        }
+
+        
         //Vector2 temp = new Vector2(moveDirection.x * moveSpeed, moveDirection.y * moveSpeed);
         //rb.MovePosition(PixelPerfectClamp(rb.position, 16) + PixelPerfectClamp(temp, 16));
     }
@@ -53,12 +92,23 @@ public class PlayerMovement : MonoBehaviour
     void FixedUpdate()
     {
         // Physics
-        Move();
+        
+            Move();
+        
+        
     }
     private Vector2 PixelPerfectClamp(Vector2 moveVector, float pixelsPerUnit)
     {
         Vector2 vectorInPixels = new Vector2(Mathf.RoundToInt(moveVector.x * pixelsPerUnit), Mathf.RoundToInt(moveVector.x * pixelsPerUnit));
 
         return vectorInPixels / pixelsPerUnit;
+    }
+    void DisableMovement()
+    {
+        disableMovement = true;
+    }
+    void EnableMovement()
+    {
+        disableMovement = false;
     }
 }

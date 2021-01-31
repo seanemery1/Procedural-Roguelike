@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &4149686578149268410
+--- !u!1 &8621854516780272764
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,23 +8,23 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 2767423178937163634}
-  - component: {fileID: -321034838208400555}
-  - component: {fileID: 582290433394178851}
+  - component: {fileID: 8660980352610448909}
+  - component: {fileID: -26363784694191339}
+  - component: {fileID: 7168563232013517932}
   m_Layer: 0
-  m_Name: DoorRightOverlay
+  m_Name: O B Door R
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &2767423178937163634
+--- !u!4 &8660980352610448909
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4149686578149268410}
+  m_GameObject: {fileID: 8621854516780272764}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
@@ -32,13 +32,13 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!212 &-321034838208400555
+--- !u!212 &-26363784694191339
 SpriteRenderer:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4149686578149268410}
+  m_GameObject: {fileID: 8621854516780272764}
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
@@ -73,7 +73,7 @@ SpriteRenderer:
   m_SortingLayerID: 440034605
   m_SortingLayer: 1
   m_SortingOrder: 1
-  m_Sprite: {fileID: 2204694164253327452, guid: 07af49e4b9620e2418a68fbdb4d452ec,
+  m_Sprite: {fileID: 5119213286248436746, guid: 07af49e4b9620e2418a68fbdb4d452ec,
     type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
@@ -85,18 +85,18 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
---- !u!114 &582290433394178851
+--- !u!114 &7168563232013517932
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4149686578149268410}
+  m_GameObject: {fileID: 8621854516780272764}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f326f30910acc02448a8fd435e0f93c8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   sortingOrderBase: 5000
-  offset: -20
-  runOnlyOnce: 0
+  offset: 0
+  runOnlyOnce: 1

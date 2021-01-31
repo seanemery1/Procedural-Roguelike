@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 5616837679920166149}
   - component: {fileID: 5616837679920166150}
   - component: {fileID: 5616837679920166148}
+  - component: {fileID: 8772904820095080272}
   - component: {fileID: 5616837679920166147}
   - component: {fileID: 5616837679920166144}
   - component: {fileID: 5616837679920166146}
@@ -47,6 +48,7 @@ SpriteRenderer:
   m_CastShadows: 0
   m_ReceiveShadows: 0
   m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -100,9 +102,33 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a7e2246ed23ebca448189276f0c7a4f2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  currentState: 0
   moveSpeed: 3
+  disableMovement: 0
   animator: {fileID: 5616837679920166147}
   rb: {fileID: 0}
+--- !u!114 &8772904820095080272
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5616837679920166151}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e359a3331654a1842a0c3062cb21cdad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  combatEnabled: 1
+  inputTimer: 0.7
+  attackRadius: 1
+  attackDamage: 1
+  attackHitBoxPos: {fileID: 6758451598816291064, guid: 49b10bafdc18e174a80dc794448b8d8f,
+    type: 3}
+  whatIsDamageable:
+    serializedVersion: 2
+    m_Bits: 0
+  animator: {fileID: 0}
 --- !u!95 &5616837679920166147
 Animator:
   serializedVersion: 3
@@ -139,8 +165,8 @@ Rigidbody2D:
   m_AngularDrag: 0.05
   m_GravityScale: 0
   m_Material: {fileID: 0}
-  m_Interpolate: 0
-  m_SleepingMode: 1
+  m_Interpolate: 1
+  m_SleepingMode: 0
   m_CollisionDetection: 1
   m_Constraints: 4
 --- !u!60 &5616837679920166146
@@ -200,3 +226,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ce2a6eb1dfa029a409081ae92083ecb4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  health: 0
+  dmgImmunity: 0
+  keys: 0

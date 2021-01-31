@@ -831,10 +831,10 @@ TextureImporter:
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape:
-      - - {x: -8, y: 8}
+      - - {x: -8, y: -2}
         - {x: -8, y: -8}
         - {x: 8, y: -8}
-        - {x: 8, y: 8}
+        - {x: 8, y: -2}
       tessellationDetail: 0
       bones: []
       spriteID: ec644332bb5bf5d60800000000000000
@@ -856,10 +856,10 @@ TextureImporter:
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape:
-      - - {x: -8, y: 8}
+      - - {x: -8, y: -2}
         - {x: -8, y: -8}
         - {x: 8, y: -8}
-        - {x: 8, y: 8}
+        - {x: 8, y: -2}
       tessellationDetail: 0
       bones: []
       spriteID: d802415861e506c10800000000000000
@@ -881,10 +881,12 @@ TextureImporter:
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape:
-      - - {x: -8, y: 8}
+      - - {x: -5, y: 8}
+        - {x: -8, y: 8}
         - {x: -8, y: -8}
         - {x: 8, y: -8}
-        - {x: 8, y: 8}
+        - {x: 8, y: -2}
+        - {x: -5, y: -2}
       tessellationDetail: 0
       bones: []
       spriteID: f33fd4e20f8414f60800000000000000
@@ -906,7 +908,9 @@ TextureImporter:
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape:
-      - - {x: -8, y: 8}
+      - - {x: 4, y: 8}
+        - {x: 4, y: -2}
+        - {x: -8, y: -2}
         - {x: -8, y: -8}
         - {x: 8, y: -8}
         - {x: 8, y: 8}
@@ -1024,8 +1028,8 @@ TextureImporter:
       outline: []
       physicsShape:
       - - {x: -5, y: -8}
-        - {x: -5, y: 8}
-        - {x: -8, y: 8}
+        - {x: -5, y: -2}
+        - {x: -8, y: -2}
         - {x: -8, y: -8}
       tessellationDetail: 0
       bones: []
@@ -1048,10 +1052,10 @@ TextureImporter:
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape:
-      - - {x: 4, y: 8}
+      - - {x: 4, y: -2}
         - {x: 4, y: -8}
         - {x: 8, y: -8}
-        - {x: 8, y: 8}
+        - {x: 8, y: -2}
       tessellationDetail: 0
       bones: []
       spriteID: a045c407c591b0740800000000000000
