@@ -77,7 +77,11 @@ public class PlayerMovement : MonoBehaviour
     {
         if (!disableMovement)
         {
-            rb.velocity = new Vector2(moveDirection.x * moveSpeed, moveDirection.y * moveSpeed);
+            //if (moveDirection.sqrMagnitude > 1) // Only normalize if necessary
+            //{
+               moveDirection = moveDirection.normalized;
+            //}
+            rb.velocity = new Vector2((Mathf.Round((moveDirection.x * moveSpeed * Time.deltaTime)/0.0625f)*0.0625f), (Mathf.Round((moveDirection.y * moveSpeed * Time.deltaTime) / 0.0625f)*0.0625f));
         }
         else
         {

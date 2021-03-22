@@ -14,6 +14,8 @@ GameObject:
   - component: {fileID: 406104234586566331}
   - component: {fileID: 4330794194293785811}
   - component: {fileID: 236778665950222091}
+  - component: {fileID: 5933872286094460318}
+  - component: {fileID: -998543478848175272}
   m_Layer: 0
   m_Name: R Door Hidden
   m_TagString: Untagged
@@ -212,3 +214,42 @@ CompositeCollider2D:
     m_Paths: []
   m_VertexDistance: 0.0005
   m_OffsetDistance: 0.00005
+--- !u!114 &5933872286094460318
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2949129677557348473}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7db70e0ea77f5ac47a8f4565a9406397, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_ShadowGroup: 0
+  m_HasRenderer: 0
+  m_UseRendererSilhouette: 1
+  m_CastsShadows: 1
+  m_SelfShadows: 1
+  m_ApplyToSortingLayers: 6fce10d6
+  m_ShapePath:
+  - {x: -0.5625, y: -0.5, z: 0}
+  - {x: -0.5625, y: 0.5, z: 0}
+  - {x: -0.1875, y: 0.5, z: 0}
+  - {x: -0.1875, y: -0.5, z: 0}
+  m_ShapePathHash: -766118635
+  m_Mesh: {fileID: 0}
+  m_InstanceId: -4117472
+--- !u!114 &-998543478848175272
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2949129677557348473}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 38f48a8d66b2adc46887f23a3a88ac01, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_ShadowGroup: 0

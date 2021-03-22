@@ -10,6 +10,8 @@ GameObject:
   m_Component:
   - component: {fileID: 8499552888531250687}
   - component: {fileID: -7725762017443838506}
+  - component: {fileID: 3236930415607421169}
+  - component: {fileID: -9197875143648197812}
   m_Layer: 0
   m_Name: C L Door T
   m_TagString: Untagged
@@ -81,5 +83,44 @@ SpriteMask:
   m_BackSortingLayer: 0
   m_FrontSortingOrder: 0
   m_BackSortingOrder: 0
-  m_IsCustomRangeActive: 0
+  m_IsCustomRangeActive: 1
   m_SpriteSortPoint: 0
+--- !u!114 &3236930415607421169
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3780149261263027331}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7db70e0ea77f5ac47a8f4565a9406397, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_ShadowGroup: 0
+  m_HasRenderer: 0
+  m_UseRendererSilhouette: 1
+  m_CastsShadows: 1
+  m_SelfShadows: 1
+  m_ApplyToSortingLayers: 6fce10d6
+  m_ShapePath:
+  - {x: 0.125, y: -0.5, z: 0}
+  - {x: 0.125, y: 0.5, z: 0}
+  - {x: 0.5, y: 0.5, z: 0}
+  - {x: 0.5, y: -0.5, z: 0}
+  m_ShapePathHash: 2140534037
+  m_Mesh: {fileID: 0}
+  m_InstanceId: -4146610
+--- !u!114 &-9197875143648197812
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3780149261263027331}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 38f48a8d66b2adc46887f23a3a88ac01, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_ShadowGroup: 0
