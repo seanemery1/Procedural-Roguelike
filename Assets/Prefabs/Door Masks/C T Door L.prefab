@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: -498497063983539498}
   - component: {fileID: 6027208029177601338}
   - component: {fileID: 349463221955221256}
-  m_Layer: 0
+  m_Layer: 2
   m_Name: C T Door L
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -88,8 +88,8 @@ SpriteRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
-  m_SortingLayerID: 440034605
-  m_SortingLayer: 1
+  m_SortingLayerID: -703541649
+  m_SortingLayer: 3
   m_SortingOrder: 0
   m_Sprite: {fileID: 7881217688275797710, guid: 07af49e4b9620e2418a68fbdb4d452ec,
     type: 3}

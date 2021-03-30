@@ -5,109 +5,193 @@ using UnityEngine;
 using UnityEngine.Tilemaps;
 using TriangleNet.Geometry;
 using TriangleNet.Topology;
+
 public class ProceduralMapGenerator : MonoBehaviour
 {
     [SerializeField]
     public int maxLeafSize = 30;
-
     [SerializeField]
-    public int maxRoomSize = 20;
-    
+    public int maxRoomSize = 23;
     [SerializeField]
     public int mapHeight = 60;
     [SerializeField]
     public int mapWidth = 80;
-
     [SerializeField]
-    public int offSetBorder = 20;
-
+    public int offSetBorder = 0;
+    [SerializeField]
+    public int maxWeightShortcut = 5;
+    [SerializeField]
+    public int shortcutChance = 50;
     [SerializeField]
     public bool drawDeluanay = true;
-
-    public int offSet = 10;
-
-    //[SerializeField]
-    //public int maxLeafSize = 500;
-
-    //[SerializeField]
-    //public int maxRoomSize = 340;
-    //[SerializeField]
-    //public int minRoomSize = 140;
-    //[SerializeField]
-    //public int mapHeight = 900;
-    //[SerializeField]
-    //public int mapWidth = 1600;
-
-
+    [SerializeField]
+    public bool drawMST = true;
+    [SerializeField]
+    public bool drawDeluanayShortcuts = true;
     [SerializeField]
     private TileBase dungeon;
     [SerializeField]
-    private Tilemap grid;
+    private Tilemap dungeonGrid;
+    [SerializeField]
+    private Tilemap minimapGrid;
 
-    //private List<Vector2Int> level;
-    private int[,] level;
-    private int[,] hallways;
+    public int[,] level;
+    public int[,] hallways;
+    public int[,] hallwaysT;
+    public List<Edge> mstEdges;
+    public List<Edge> deluanayEdges;
+    private List<Edge> meshEdges;
+    private List<Edge> allEdges;
+    private List<Edge> tEdges;
     private List<Leaf> leafs;
+    public Dictionary<Vertex, int> distances;
     private List<RectInt> rooms;
-    private TriangleNet.Mesh mesh;
-    private List<Edge> mstEdges;
-    //private List<Vector2Int> vertices;
-    //private List<Vector2Int, Vector2Int> edges;
-    //public ProceduralMapGenerator map;
-    void Awake()
+    public HashSet<Vertex> vertices;
+    public int maxDistance;
+    private DisjointSet ds;
+    public TriangleNet.Mesh mesh;
+    public Vertex start;
+    public Vertex end;
+    PopulateDungeon populateDungeon;
+
+
+    void Start()
     {
-        this.rooms = new List<RectInt>();
-        this.level = generateBSP(this.mapWidth, this.mapHeight);
-        this.mesh = deluanayTriangulation();
-        this.mstEdges = findMST();
-
-        //createHallways();
-
-        //this.edges = bowyerWatsonDeluanyTriangle();
-        this.grid = GetComponentInParent<Tilemap>();
-        for (int x = 0; x < this.mapWidth + offSetBorder * 3; x++)
+        rooms = new List<RectInt>();
+        level = generateBSP(this.mapWidth, this.mapHeight);
+        mesh = DeluanayTriangulation();
+        meshEdges = new List<Edge>();
+        foreach (Edge edge in this.mesh.Edges)
         {
-            for (int y = 0; y < this.mapHeight + offSetBorder * 3; y++)
-            {
-                if (level[x, y] == 1)
-                {
-                    grid.SetTile(new Vector3Int(x, y, 0), this.dungeon);
-                    Debug.Log(x);
-                }
-
-            }
+            meshEdges.Add(edge);
         }
 
-        this.hallways = createHallways(this.mapWidth, this.mapHeight);
-        for (int x = 0; x < this.mapWidth + offSetBorder * 3; x++)
-        {
-            for (int y = 0; y < this.mapHeight + offSetBorder * 3; y++)
-            {
-                if (hallways[x, y] == 1)
-                {
-                    grid.SetTile(new Vector3Int(x, y, 0), this.dungeon);
-                    Debug.Log(x);
-                }
-
-            }
-        }
+        FindMST();
 
 
-        //gameObject.AddComponent<MeshFilter>();
-        //gameObject.AddComponent<MeshRenderer>();
-        //Mesh mesh = GetComponent<MeshFilter>().mesh;
+        this.hallways = new int[mapWidth, mapHeight];
+        this.hallwaysT = new int[mapWidth, mapHeight];
+        this.createHallways(this.mapWidth, this.mapHeight, this.allEdges);
 
-        //mesh.Clear();
+        this.dungeonGrid = GetComponentInParent<Tilemap>();
+        this.paintGrid();
 
-        //mesh.vertices = new Vector3[] { new Vector3(0, 0, 0), new Vector3(300, 0, 0), new Vector3(0, 300, 0) };
-        ////mesh.uv = new Vector2[] { new Vector2(0, 0), new Vector2(300, 0), new Vector2(0, 300) };
-        //mesh.triangles = new int[] { 0, 1, 2 };
-        Debug.DrawLine(new Vector3(0, 0, 0), new Vector3(220, 220, 0), Color.green, 0f, false);
-        //level = new List<Vector2Int>();
-
-
+        populateDungeon = GetComponent<PopulateDungeon>();
+        populateDungeon.PopulateMap();
     }
-   List<Edge> findMST()
+    public RectInt FindRoom(Vertex vertex)
+    {
+        foreach (RectInt room in rooms)
+        {
+            if (room.Contains(new Vector2Int((int)vertex.x, (int)vertex.y)))
+            {
+                return room;
+            }
+        }
+        return new RectInt(0, 0, 0, 0);
+    }
+    void FindGraphDiameter()
+    {
+        Vertex temp1 = BreadthFirstSearch(null);
+        Vertex temp2 = BreadthFirstSearch(temp1);
+        if (FindRoom(temp1).size.x * FindRoom(temp1).size.y < FindRoom(temp2).size.x * FindRoom(temp2).size.y)
+        {
+            start = temp1;
+            end = temp2;
+        }
+        else
+        {
+            start = temp2;
+            end = temp1;
+        }
+        Debug.Log("Start/End x: " + start.x + " y: " + start.y);
+        Debug.Log("Start/End x: " + end.x + " y: " + end.y);
+    }
+    Vertex BreadthFirstSearch(Vertex newSource)
+    {
+
+        Queue<Vertex> q = new Queue<Vertex>();
+        List<Vertex> visited = new List<Vertex>();
+        distances = new Dictionary<Vertex, int>();
+        Vertex source = newSource;
+        foreach (Vertex vertex in vertices)
+        {
+            distances.Add(vertex, 0);
+            if (source == null)
+            {
+                source = vertex;
+            }
+
+        }
+        visited.Add(source);
+        q.Enqueue(source);
+
+        while (q.Count != 0)
+        {
+            Debug.Log("we w");
+            Vertex v = q.Peek();
+            //Debug.Log("Start/End peek v " + v.x + " " + v.y);
+            foreach (Edge neighborEdge in mstEdges)
+            {
+                Vertex v0 = mesh.vertices[neighborEdge.P0];
+                Vertex v1 = mesh.vertices[neighborEdge.P1];
+                if (v0.Equals(v) || v1.Equals(v))
+                {
+                    Vertex neighbor = null;
+                    if (!v0.Equals(v))
+                    {
+                        Debug.Log("Start/End v0");
+                        neighbor = v0;
+                    }
+                    else if (!v1.Equals(v))
+                    {
+                        Debug.Log("Start/End v1");
+                        neighbor = v1;
+                    }
+                    else
+                    {
+                    }
+                    if (!visited.Contains(neighbor))
+                    {
+                        q.Enqueue(neighbor);
+
+                        visited.Add(neighbor);
+                        distances[neighbor] = distances[v] + 1;
+                    }
+
+                }
+            }
+            q.Dequeue();
+        }
+        foreach (Vertex vertex in vertices)
+        {
+            if (distances[vertex] > distances[source])
+            {
+                Debug.Log("Start/End distance: " + distances[vertex]);
+                source = vertex;
+                maxDistance = distances[vertex];
+            }
+        }
+        return source;
+        //ds.printSet(rooms.Count, mstEdges, mesh);
+    }
+    void paintGrid()
+    {
+        for (int x = 0; x < this.mapWidth; x++)
+        {
+            for (int y = 0; y < this.mapHeight; y++)
+            {
+                if (hallwaysT[x, y] == 1 || level[x, y] == 1 || hallways[x, y] == 1)//level[x,y]==1||hallways[x, y] == 1 ||
+                {
+                    dungeonGrid.SetTile(new Vector3Int(x, y, 0), this.dungeon);
+                    //minimapGrid.SetTile(new Vector3Int(x, y, 0), this.dungeon);
+                    Debug.Log(x);
+                }
+            }
+        }
+    }
+
+    void FindMST()
     {
         if (mesh != null)
         {
@@ -125,82 +209,94 @@ public class ProceduralMapGenerator : MonoBehaviour
             float[] weightsArr = weights.ToArray();
             Edge[] edgesArr = edges.ToArray();
             System.Array.Sort(weightsArr, edgesArr);
-            HashSet<Vertex> usedVertices = new HashSet<Vertex>();
+            this.vertices = new HashSet<Vertex>();
             for (int i = 0; i < weightsArr.Length; i++)
             {
                 Vertex v0 = mesh.vertices[edgesArr[i].P0];
                 Vertex v1 = mesh.vertices[edgesArr[i].P1];
-                Debug.Log(weightsArr[i] + "- x0: " + (float)v0.x + " y0: " + (float)v0.y + " x1: " + (float)v1.x + " y1: " +(float)v1.y);
-                usedVertices.Add(v0);
-                usedVertices.Add(v1);
+                Debug.Log(weightsArr[i] + "- x0: " + (float)v0.x + " y0: " + (float)v0.y + " x1: " + (float)v1.x + " y1: " + (float)v1.y);
+                this.vertices.Add(v0);
+                this.vertices.Add(v1);
             }
-            
-            //Set<Vertex> touched = new List<Vertex>();
-            List<Edge> mst = new List<Edge>();
 
-            DisjointSet ds = new DisjointSet();
-            ds.makeSet(usedVertices);
+            mstEdges = new List<Edge>();
+
+            ds = new DisjointSet();
+            ds.MakeSet(this.vertices);
             int index = 0;
-            while (mst.Count != rooms.Count - 1)
+            while (mstEdges.Count != rooms.Count - 1)
             {
                 Edge nextEdge = edgesArr[index];
-                
-                Vertex x = ds.find(mesh.vertices[nextEdge.P0]);
-                Vertex y = ds.find(mesh.vertices[nextEdge.P1]);
+
+                Vertex x = ds.Find(mesh.vertices[nextEdge.P0]);
+                Vertex y = ds.Find(mesh.vertices[nextEdge.P1]);
                 Debug.Log(weightsArr[index] + " - MST - x0: " + (float)x.x + " y0: " + (float)x.y + " x1: " + (float)y.x + " y1: " + (float)y.y);
                 index++;
+
                 if (x != y)
                 {
-                    mst.Add(nextEdge);
-                    ds.union(x, y);
+                    mstEdges.Add(nextEdge);
+                    ds.Union(x, y);
                 }
             }
-            return mst;
-            //for (int i = 0; i < weightsArr.Length; i++)
-            //{
-            //    Vertex v0 = mesh.vertices[edgesArr[i].P0];
-            //    Vertex v1 = mesh.vertices[edgesArr[i].P1];
-            //    if (!usedVertices.Contains(v0) || !usedVertices.Contains(v1))
-            //    {
-            //        keep.Add(edgesArr[i]);
-            //        usedVertices.Add(v0);
-            //        usedVertices.Add(v1);
-            //    }
-                
-            //    if (keep.Count >= rooms.Count - 1)
-            //    {
-            //        break;
-            //    }
-            //}
-            //for (int i = 0; i < weightsArr.Length; i++)
-            //{
-            //    Vertex v0 = mesh.vertices[edgesArr[i].P0];
-            //    Vertex v1 = mesh.vertices[edgesArr[i].P1];
-            //    if (!usedVertices.Contains(v0) || !usedVertices.Contains(v1))
-            //    {
-            //        keep.Add(edgesArr[i]);
-            //        usedVertices.Add(v0);
-            //        usedVertices.Add(v1);
-            //    }
-                
-            //    if (keep.Count >= rooms.Count - 1)
-            //    {
-            //        break;
-            //    }
-            //}
+            FindGraphDiameter();
+            deluanayEdges = new List<Edge>();
+            allEdges = new List<Edge>(mstEdges);
+            for (int i = 0; i < Mathf.Min(index + maxWeightShortcut, edgesArr.Length); i++)
+            {
+                if (!allEdges.Contains(edgesArr[i]))
+                {
+                    bool triangle = false;
+                    bool startEnd = false;
+                    foreach (Edge edge1 in allEdges)
+                    {
+                        foreach (Edge edge2 in allEdges)
+                        {
+                            if (!edge1.Equals(edge2))
+                            {
+                                HashSet<Vertex> hash = new HashSet<Vertex>();
+                                hash.Add(mesh.vertices[edge1.P0]);
+                                hash.Add(mesh.vertices[edge1.P1]);
+                                hash.Add(mesh.vertices[edge2.P0]);
+                                hash.Add(mesh.vertices[edge2.P1]);
+                                hash.Add(mesh.vertices[edgesArr[i].P0]);
+                                hash.Add(mesh.vertices[edgesArr[i].P1]);
+                                if (hash.Count == 3)
+                                {
+                                    triangle = true;
+                                }
+                                hash = new HashSet<Vertex>();
+                            }
+                        }
+                    }
+                    if (mesh.vertices[edgesArr[i].P0].Equals(start)
+                        || mesh.vertices[edgesArr[i].P0].Equals(end)
+                        || mesh.vertices[edgesArr[i].P1].Equals(start)
+                        || mesh.vertices[edgesArr[i].P1].Equals(end))
+                    {
+                        Debug.Log("Start/End: flag is true");
+                        startEnd = true;
+                    }
+                    if (Random.Range(0, 100) < shortcutChance && !triangle && !startEnd)
+                    {
+                        allEdges.Add(edgesArr[i]);
+                        deluanayEdges.Add(edgesArr[i]);
+                    }
+                }
+            }
+
+
         }
-        return null;
+
     }
-    TriangleNet.Mesh deluanayTriangulation()
+
+    TriangleNet.Mesh DeluanayTriangulation()
     {
         Polygon polygon = new Polygon();
-        //polygon.Add(new Vertex())
-
         for (int i = 0; i < rooms.Count; i++)
         {
             polygon.Add(new Vertex(rooms[i].center.x, rooms[i].center.y));
         }
-        Debug.Log("Room count:" + rooms.Count);
 
         TriangleNet.Meshing.ConstraintOptions options = new TriangleNet.Meshing.ConstraintOptions()
         {
@@ -210,12 +306,6 @@ public class ProceduralMapGenerator : MonoBehaviour
         return (TriangleNet.Mesh)polygon.Triangulate(options);
     }
 
-    // List<Vector2Int> bowyerWatsonDeluanyTriangle()
-    //  {
-    //edges = new List<Vector2Int>();
-    //edges.Add(new Vector2Int(0, ))
-    //return edges;
-    // }
     int[,] generateBSP(int mapWidth, int mapHeight)
     {
 
@@ -224,7 +314,7 @@ public class ProceduralMapGenerator : MonoBehaviour
         //level = new int[220, 220];
         leafs = new List<Leaf>();
 
-        Leaf root = new Leaf(offSetBorder, offSetBorder, mapWidth, mapHeight);
+        Leaf root = new Leaf(0, 0, mapWidth, mapHeight);
         leafs.Add(root);
 
         bool splitSuccess = true;
@@ -234,387 +324,628 @@ public class ProceduralMapGenerator : MonoBehaviour
             splitSuccess = false;
             for (int i = 0; i < this.leafs.Count; i++)
             {
-                if (this.leafs[i].child1 == null && this.leafs[i].child2 == null)
+                if (leafs[i].child1 == null && leafs[i].child2 == null)
                 {
-                    if (this.leafs[i].width > this.maxLeafSize || this.leafs[i].height > Mathf.RoundToInt(this.maxLeafSize*0.75f) || Random.Range(0,100)< 0) {
-                        if (this.leafs[i].splitLeaf())
+                    if (leafs[i].width > maxLeafSize || leafs[i].height > Mathf.RoundToInt(maxLeafSize * 0.75f) || Random.Range(0, 100) < 0)
+                    {
+                        if (leafs[i].SplitLeaf())
                         {
-                            this.leafs.Add(this.leafs[i].child1);
-                            this.leafs.Add(this.leafs[i].child2);
+                            leafs.Add(leafs[i].child1);
+                            leafs.Add(leafs[i].child2);
                             splitSuccess = true;
+
                         }
                     }
                 }
             }
         }
-        root.createRooms(this);
+        root.CreateRooms(this);
 
         return this.level;
 
 
     }
-    public void createRoom(RectInt room)
+    public void CreateRoom(RectInt room)
     {
         this.rooms.Add(room);
-        Debug.Log("room size: " + room.allPositionsWithin.ToString());
-        Debug.Log("room size: " + room.min.x + " " + room.max.x);
-        for (int x = room.min.x; x < room.max.x; x++)
+        for (int x = room.min.x; x <= room.max.x; x++)
         {
-            for (int y = room.min.y; y < room.max.y; y++)
+            for (int y = room.min.y; y <= room.max.y; y++)
             {
-                Debug.Log("x: " + x + " y: " + y);
-
                 this.level[x, y] = 1;
             }
         }
     }
 
-    int[,] createHallways(int mapWidth, int mapHeight)
+    void createHallways(int mapWidth, int mapHeight, List<Edge> edges)
     {
-
-        //level.Add(new Vector2Int(0, 0));
-        hallways = new int[mapWidth + offSetBorder * 3, mapHeight + offSetBorder * 3];
-
-
-        foreach (Edge edge in mstEdges)
+        tEdges = new List<Edge>();
+        foreach (Edge edge in edges)
         {
-            int x1 = Mathf.RoundToInt((float) mesh.vertices[edge.P0].x);
+            int x1 = Mathf.RoundToInt((float)mesh.vertices[edge.P0].x);
             int y1 = Mathf.RoundToInt((float)mesh.vertices[edge.P0].y);
 
             int x2 = Mathf.RoundToInt((float)mesh.vertices[edge.P1].x);
             int y2 = Mathf.RoundToInt((float)mesh.vertices[edge.P1].y);
 
-            if (Random.Range(0, 100) < 50)
+            RectInt room1 = new RectInt(0, 0, 0, 0);
+            RectInt room2 = new RectInt(0, 0, 0, 0);
+
+            foreach (RectInt room in rooms)
             {
-                this.createHorTunnel(x1, x2, y1);
-                this.createVirTunnel(y1, y2, x2);
+                if (x1 > room.xMin && x1 < room.xMax && y1 > room.yMin && y1 < room.yMax)
+                {
+                    room1 = room;
+                }
+
+                if (x2 > room.xMin && x2 < room.xMax && y2 > room.yMin && y2 < room.yMax)
+                {
+                    room2 = room;
+                }
+            }
+
+            int xMid = Mathf.RoundToInt((x1 + x2) / 2);
+            int yMid = Mathf.RoundToInt((y1 + y2) / 2);
+
+            if (yMid <= room1.yMax - 3 && yMid <= room2.yMax - 3 && yMid >= room1.yMin + 2 && yMid >= room2.yMin + 2)
+            {
+                CreateHorTunnel(Mathf.Min(room1.xMax, room2.xMax), Mathf.Max(room1.xMin, room2.xMin), yMid, room1, room2);
+
+            }
+            else if (xMid <= room1.xMax - 3 && xMid <= room2.xMax - 3 && xMid >= room1.xMin + 2 && xMid >= room2.xMin + 2)
+            {
+                CreateVirTunnel(Mathf.Min(room1.yMax, room2.yMax), Mathf.Max(room1.yMin, room2.yMin), xMid, room1, room2);
             }
             else
             {
-                this.createVirTunnel(y1, y2, x1);
-                this.createHorTunnel(x1, x2, y2);
-
+                tEdges.Add(edge);
             }
         }
+        foreach (Edge edge in tEdges)
+        {
+            int x1 = Mathf.RoundToInt((float)mesh.vertices[edge.P0].x);
+            int y1 = Mathf.RoundToInt((float)mesh.vertices[edge.P0].y);
 
-        return this.hallways;
-        //int x1 = Mathf.RoundToInt(room1.center.x);
-        //int y1 = Mathf.RoundToInt(room1.center.y);
+            int x2 = Mathf.RoundToInt((float)mesh.vertices[edge.P1].x);
+            int y2 = Mathf.RoundToInt((float)mesh.vertices[edge.P1].y);
 
-        //int x2 = Mathf.RoundToInt(room2.center.x);
-        //int y2 = Mathf.RoundToInt(room2.center.y);
+            RectInt room1 = new RectInt(0, 0, 0, 0);
+            RectInt room2 = new RectInt(0, 0, 0, 0);
 
-        //Debug.DrawLine(new Vector3(x1, y1, 0), new Vector3(x2, y2, 0));
-        
+            foreach (RectInt room in rooms)
+            {
+                if (x1 > room.xMin && x1 < room.xMax && y1 > room.yMin && y1 < room.yMax)
+                {
+                    room1 = room;
+                }
+
+                if (x2 > room.xMin && x2 < room.xMax && y2 > room.yMin && y2 < room.yMax)
+                {
+                    room2 = room;
+                }
+            }
+            CreateTTunnel(x1, x2, y1, y2, room1, room2);
+
+        }
+
+
     }
-    private void createHorTunnel(int x1, int x2, int y)
+
+    private void CreateHorTunnel(int x1, int x2, int y, RectInt room1, RectInt room2)
     {
-        for (int x = Mathf.Min(x1, x2) - 2; x < Mathf.Max(x1, x2) + 2; x++) {
-            this.hallways[x, y -2] = 1;
+        for (int x = Mathf.Min(x1, x2); x <= Mathf.Max(x1, x2); x++)
+        {
+            this.hallways[x, y - 2] = 1;
             this.hallways[x, y - 1] = 1;
             this.hallways[x, y] = 1;
             this.hallways[x, y + 1] = 1;
         }
 
-            
+
     }
-    public void createVirTunnel(int y1, int y2, int x)
+    public void CreateVirTunnel(int y1, int y2, int x, RectInt room1, RectInt room2)
     {
-        for (int y = Mathf.Min(y1, y2) - 2; y < Mathf.Max(y1, y2) + 2; y++)
+        for (int y = Mathf.Min(y1, y2); y <= Mathf.Max(y1, y2); y++)
         {
             this.hallways[x - 2, y] = 1;
             this.hallways[x - 1, y] = 1;
             this.hallways[x, y] = 1;
             this.hallways[x + 1, y] = 1;
-            
         }
 
     }
-    private Renderer myRenderer;
-    // Start is called before the first frame update
-    void Start()
+
+    private void CreateTTunnel(int x1, int x2, int y1, int y2, RectInt room1, RectInt room2)
     {
-        
-    }
 
-    // Update is called once per frame
-    void Update()
-    {
-        //Debug.DrawLine(new Vector3(0, 0, 0), new Vector3(100, 100, 0), Color.green, Time.deltaTime, false);
-        //for (int i = 0; i < this.rooms.Count; i++)
-        //{
-        //    Debug.DrawLine(new Vector3(rooms[i].center.x, rooms[i].center.y, 0), new Vector3(100, 100, 0), Color.green, Time.deltaTime, false);
-        //}
-        Debug.DrawLine(new Vector3(0, 0, 0), new Vector3(220, 0, 0), Color.blue, Time.deltaTime, false);
-        Debug.DrawLine(new Vector3(220, 0, 0), new Vector3(0, 220, 0), Color.blue, Time.deltaTime, false);
-        Debug.DrawLine(new Vector3(0, 220, 0), new Vector3(0, 0, 0), Color.blue, Time.deltaTime, false);
-        if (drawDeluanay)
+        int yMid = y2;
+        int xMid = x1;
+        if ((room2.yMin < room1.yMax && room1.yMax < room2.yMax))
         {
-            drawDebugMeshDeluanay();
-            drawDebugMST();
+            yMid = y1;
+            xMid = x2;
         }
-        
-        
-
-        
-
-    }
-
-    void drawDebugMST()
-    {
-        if (mesh != null)
+        else if ((room1.yMin < room2.yMax && room2.yMax < room1.yMax))
         {
-            // We're probably in the editor
-            foreach (Edge edge in mstEdges)
-            {
-                Vertex v0 = mesh.vertices[edge.P0];
-                Vertex v1 = mesh.vertices[edge.P1];
-                Vector3 p0 = new Vector3((float)v0.x, (float)v0.y, 0.0f);
-                Vector3 p1 = new Vector3((float)v1.x, (float)v1.y, 0.0f);
-                Debug.DrawLine(p0, p1, Color.green, Time.deltaTime, false);
-            }
+            yMid = y2;
+            xMid = x1;
         }
-    }
-    void drawDebugMeshDeluanay()
-    {
-        if (mesh != null)
+        else if ((room2.xMin < room1.xMax && room1.xMax < room2.xMax))
         {
-            // We're probably in the editor
-            foreach (Edge edge in mesh.Edges)
-            {
-                Vertex v0 = mesh.vertices[edge.P0];
-                Vertex v1 = mesh.vertices[edge.P1];
-                Vector3 p0 = new Vector3((float)v0.x, (float)v0.y, 0.0f);
-                Vector3 p1 = new Vector3((float)v1.x, (float)v1.y, 0.0f);
-                Debug.DrawLine(p0, p1, Color.red, Time.deltaTime, false);
-            }
+            yMid = y2;
+            xMid = x1;
         }
-    }
-    
-}
-
-class DisjointSet
-{
-    Dictionary<Vertex, Vertex> parent = new Dictionary<Vertex, Vertex>();
-
-    public void makeSet(HashSet<Vertex> vertices)
-    {
-        foreach(Vertex vertex in vertices)
+        else if (room1.xMin < room2.xMax && room2.xMax < room1.xMax)
         {
-            parent.Add(vertex, vertex);
-        }
-        Debug.Log("Count -" + parent.Count);
-    }
-
-    public Vertex find(Vertex k)
-    {
-        if (parent[k]==k)
-        {
-            return k;
-        }
-
-        return find(parent[k]);
-    }
-
-    public void union(Vertex a, Vertex b)
-    {
-        Vertex x = find(a);
-        Vertex y = find(b);
-        if (parent.ContainsKey(x))
-        {
-            parent[x] = y;
-        } else
-        {
-            parent.Add(x, y);
-        }
-        //try
-        //{
-        //    parent.Add(x, y);
-        //} catch(Exception)
-        //{
-
-        //}
-        
-    }
-
-
-}
-
-
-public class Leaf
-{
-    public int x;
-    public int y;
-    public int width;
-    public int height;
-    public Leaf child1;
-    public Leaf child2;
-    public int min_width = 12;
-    public int min_height = 8;
-
-    
-    private RectInt room;
-    public Leaf(int x, int y, int width, int height)
-    {
-        this.x = x;
-        this.y = y;
-        this.width = width;
-        this.height = height;
-        this.room = new RectInt(0, 0, 0, 0);
-        
-
-    }
-    public bool splitLeaf()
-    {
-        if (child1!=null||child2!=null)
-        {
-            return false;
-        }
-
-        bool splitHor = true;
-        if (Random.Range(0, 100) < 50)
-        {
-            splitHor = false;
-        }
-    
-
-        if (this.width > this.height)
-        {
-            splitHor = false;
-        } else if (this.height > this.width)
-        {
-            splitHor = true;
-        }
-
-        int max = 0;
-
-        if (splitHor)
-        {
-            max = this.height - this.min_height;
-            if (max < this.min_height)
-            {
-                return false;
-            }
+            yMid = y1;
+            xMid = x2;
         }
         else
         {
-            max = this.width - this.min_width;
-            if (max < this.min_width)
+            bool swap = false;
+            for (int x = Mathf.Min(room2.xMax, room1.xMax) + 1; x < xMid; x++)
             {
-                return false;
+                if ((this.level[x, yMid - 3] == 1 || this.level[x, yMid - 2] == 1 || this.level[x, yMid - 1] == 1 || this.level[x, yMid] == 1 || this.level[x, yMid + 1] == 1 || this.level[x, yMid + 2] == 1))
+                {
+                    swap = true;
+
+                }
             }
-        }
-
-        
-        int split;
-        
-        if (splitHor)
-        {
-            split = Mathf.RoundToInt(Random.Range(this.min_height, Mathf.RoundToInt(max*0.75f)));
-            this.child1 = new Leaf(this.x, this.y, this.width, split);
-
-            this.child2 = new Leaf(this.x, this.y + split, this.width, this.height - split);
-        } else
-        {
-            split = Mathf.RoundToInt(Random.Range(this.min_width, max));
-            this.child1 = new Leaf(this.x, this.y, split, this.height);
-
-            this.child2 = new Leaf(this.x + split, this.y, this.width - split, this.height);
-        }
-        return true;
-    }
-
-    public void createRooms(ProceduralMapGenerator bspTree)
-    {
-        if (this.child1 != null || this.child2 != null)
-        {
-            if (this.child1 != null)
+            for (int y = Mathf.Min(room2.yMax, room1.yMax) + 1; y < yMid; y++)
             {
-                this.child1.createRooms(bspTree);
+                if (this.level[xMid - 3, y] == 1 || this.level[xMid - 2, y] == 1 || this.level[xMid - 1, y] == 1 || this.level[xMid, y] == 1 || this.level[xMid + 1, y] == 1 || this.level[xMid + 2, y] == 1)
+                {
+                    swap = true;
+                }
 
             }
-            if (this.child2 != null)
+            for (int x = Mathf.Max(room2.xMin, room1.xMin) - 1; x >= xMid; x--)
             {
-                this.child2.createRooms(bspTree);
+                if ((this.level[x, yMid - 3] == 1 || this.level[x, yMid - 2] == 1 || this.level[x, yMid - 1] == 1 || this.level[x, yMid] == 1 || this.level[x, yMid + 1] == 1 || this.level[x, yMid + 2] == 1))
+                {
+                    swap = true;
+
+                }
             }
-            //if (this.child1 != null && this.child2 != null)
-            //{
-            //    if (!child1.getRoom().Equals(new RectInt(0, 0, 0, 0)) && !child2.getRoom().Equals(new RectInt(0, 0, 0, 0)))
-            //    {
-            //        bspTree.createHallways(this.child1.getRoom(), this.child2.getRoom());
-            //    }
-                    
-            //}
-            // connect with hallway
-           
-        }
-        else
-        {
-
-            //int w = Random.Range(Mathf.RoundToInt(bspTree.minRoomSize/10), Mathf.RoundToInt(Mathf.Min(bspTree.maxRoomSize, this.width - 10)/10)) * 10;
-
-            //int h = Random.Range(Mathf.RoundToInt(bspTree.minRoomSize/10), Mathf.RoundToInt(Mathf.Min(bspTree.maxRoomSize, this.height - 10)/10)) * 10;
-
-            //int x = Random.Range(Mathf.RoundToInt(this.x/10), Mathf.RoundToInt(this.x + (this.width - 10) - w)/10) * 10;
-
-            //int y = Random.Range(Mathf.RoundToInt(this.y/10), Mathf.RoundToInt(this.y + (this.height - 10) - h)/10) * 10;
-
-            int w = Mathf.RoundToInt(Random.Range(min_width, Mathf.Min(bspTree.maxRoomSize, this.width - 2)));
-
-            int h = Mathf.RoundToInt(Random.Range(min_height, Mathf.Min(bspTree.maxRoomSize, this.height - 2)));
-
-            int x = Mathf.RoundToInt(Random.Range(this.x, this.x + (this.width - 1) - w));
-
-            int y = Mathf.RoundToInt(Random.Range(this.y, this.y + (this.height - 1) - h));
-            Debug.Log("x: " + x + " y: " + y + " w: " + w + " h: " + h);
-            this.room = new RectInt(x, y, w, h);
-
-            bspTree.createRoom(this.room);
-        }
-		
-			
-    }
-    RectInt getRoom()
-    {
-        if (!this.room.Equals(new RectInt(0, 0, 0, 0)))
-        {
-            return this.room;
-        }
-        else
-        {
-            RectInt room1 = new RectInt(0, 0, 0, 0);
-            RectInt room2 = new RectInt(0, 0, 0, 0);
-            if (this.child1 != null)
+            for (int y = Mathf.Max(room2.yMin, room1.yMin) - 1; y >= yMid; y--)
             {
-                room1 = this.child1.getRoom();
+                if (this.level[xMid - 3, y] == 1 || this.level[xMid - 2, y] == 1 || this.level[xMid - 1, y] == 1 || this.level[xMid, y] == 1 || this.level[xMid + 1, y] == 1 || this.level[xMid + 2, y] == 1)
+                {
+                    //if ((room1.Contains(new Vector2Int(xMid - 3, y))
+                    //    || room1.Contains(new Vector2Int(xMid - 2, y))
+                    //    || room1.Contains(new Vector2Int(xMid - 1, y))
+                    //    || room1.Contains(new Vector2Int(xMid, y))
+                    //    || room1.Contains(new Vector2Int(xMid + 1, y))
+                    //    || room1.Contains(new Vector2Int(xMid + 2, y))
+                    //    || room2.Contains(new Vector2Int(xMid - 3, y))
+                    //    || room2.Contains(new Vector2Int(xMid - 2, y))
+                    //    || room2.Contains(new Vector2Int(xMid - 1, y))
+                    //    || room2.Contains(new Vector2Int(xMid, y))
+                    //    || room2.Contains(new Vector2Int(xMid + 1, y))
+                    //    || room2.Contains(new Vector2Int(xMid + 2, y))))
+                    //{
+
+                    //} else
+                    //{
+                    Debug.Log("x2: swap trueY2");
+                    swap = true;
+                    //}
+
+
+                }
+
             }
-
-            if (this.child2 != null)
+            if (swap)
             {
-                room2 = this.child2.getRoom();
-            }
-
-            if (!room1.Equals(new RectInt(0, 0, 0, 0)) || !room2.Equals(new RectInt(0, 0, 0, 0)))
-            {
-                return new RectInt(0, 0, 0, 0);
-            }
-            else if (!room2.Equals(new RectInt(0, 0, 0, 0)))
-            {
-                return room1;
-            }
-            else if (!room1.Equals(new RectInt(0, 0, 0, 0)))
-            {
-                return room2;
+                Debug.Log("x2: swapped");
+                yMid = y1;
+                xMid = x2;
             }
             else
             {
-                if (Random.Range(0, 100) < 50)
+                yMid = y2;
+                xMid = x1;
+            }
+        }
+
+        for (int x = Mathf.Min(x1, x2) - 2; x <= Mathf.Max(x1, x2) + 1; x++)
+        {
+
+            if (!(this.hallways[x, yMid - 3] == 1 || this.hallways[x, yMid - 2] == 1 || this.hallways[x, yMid - 1] == 1 || this.hallways[x, yMid] == 1 || this.hallways[x, yMid + 1] == 1 || this.hallways[x, yMid + 2] == 1))
+            {
+                this.hallwaysT[x, yMid - 2] = 1;
+                this.hallwaysT[x, yMid - 1] = 1;
+                this.hallwaysT[x, yMid] = 1;
+                this.hallwaysT[x, yMid + 1] = 1;
+
+                if (!(this.level[x, yMid - 3] == 1 && this.level[x, yMid - 2] == 1 && this.level[x, yMid - 1] == 1 && this.level[x, yMid] == 1 && this.level[x, yMid + 1] == 1 && this.level[x, yMid + 2] == 1)
+                    || !(this.level[x, yMid - 3] == 0 && this.level[x, yMid - 2] == 0 && this.level[x, yMid - 1] == 0 && this.level[x, yMid] == 0 && this.level[x, yMid + 1] == 0 && this.level[x, yMid + 2] == 0))
+                {
+                    if ((Mathf.RoundToInt(room1.yMin) >= yMid - 2 && Mathf.RoundToInt(room1.yMin) <= yMid + 2) || (Mathf.RoundToInt(room1.yMax) >= yMid - 2 && Mathf.RoundToInt(room1.yMax) <= yMid + 2))
+                    {
+                        for (int i = room1.xMin; i <= room1.xMax; i++)
+                        {
+                            for (int j = yMid - 2; j <= yMid + 1; j++)
+                            {
+                                this.level[i, j] = 1;
+                            }
+                        }
+                    }
+                    if ((Mathf.RoundToInt(room2.yMin) >= yMid - 2 && Mathf.RoundToInt(room2.yMin) <= yMid + 2) || (Mathf.RoundToInt(room2.yMax) >= yMid - 2 && Mathf.RoundToInt(room2.yMax) <= yMid + 2))
+                    {
+                        for (int i = room2.xMin; i <= room2.xMax; i++)
+                        {
+                            for (int j = yMid - 2; j <= yMid + 1; j++)
+                            {
+                                this.level[i, j] = 1;
+                            }
+                        }
+                    }
+                }
+            }
+            else
+            {
+                if (x < (Mathf.Max(x1, x2) - 2) && this.hallways[x, yMid - 2] == 1)
+                {
+                    this.hallwaysT[x, yMid - 2] = 0;
+                    this.hallwaysT[x, yMid - 1] = 0;
+                    this.hallwaysT[x, yMid] = 0;
+                    this.hallwaysT[x, yMid + 1] = 0;
+
+                    //if (stamina>0)
+                    //{
+                    //    //this.hallwaysT[x, yMid - 2] = 0;
+                    //    //this.hallwaysT[x, yMid - 1] = 0;
+                    //    //this.hallwaysT[x, yMid] = 0;
+                    //    //this.hallwaysT[x, yMid + 1] = 0;
+                    //    if (this.hallwaysT[x, yMid - 2] == 1 || this.hallways[x, yMid - 2] == 0)
+                    //{
+                    //    this.hallwaysT[x, yMid - 2] = 0;
+                    //}
+                    //if (this.hallwaysT[x, yMid - 1] == 1 || this.hallways[x, yMid - 1] == 0)
+                    //{
+                    //    this.hallwaysT[x, yMid - 1] = 0;
+                    //}
+                    //if (this.hallwaysT[x, yMid] == 1 || this.hallways[x, yMid] == 0)
+                    //{
+                    //    this.hallwaysT[x, yMid] = 0;
+                    //}
+                    //if (this.hallwaysT[x, yMid + 1] == 1 || this.hallways[x, yMid + 1] == 0)
+                    //{
+                    //    this.hallwaysT[x, yMid + 1] = 0;
+                }
+                //    stamina--;
+                //}
+                //this.hallwaysT[x, yMid - 2] = 0;
+                //this.hallwaysT[x, yMid - 1] = 0;
+                //this.hallwaysT[x, yMid] = 0;
+                //this.hallwaysT[x, yMid + 1] = 0;
+            }
+        }
+
+        for (int y = Mathf.Min(y1, y2) - 2; y <= Mathf.Max(y1, y2) + 1; y++)
+        {
+            // if hallways are clear
+            if (!(this.hallways[xMid - 3, y] == 1 || this.hallways[xMid - 2, y] == 1 || this.hallways[xMid - 1, y] == 1 || this.hallways[xMid, y] == 1 || this.hallways[xMid + 1, y] == 1 || this.hallways[xMid + 2, y] == 1))
+            {
+                this.hallwaysT[xMid - 2, y] = 1;
+                this.hallwaysT[xMid - 1, y] = 1;
+                this.hallwaysT[xMid, y] = 1;
+                this.hallwaysT[xMid + 1, y] = 1;
+
+                if (!(this.level[xMid - 2, y] == 1 && this.level[xMid - 1, y] == 1 && this.level[xMid, y] == 1 && this.level[xMid + 1, y] == 1 && this.level[xMid - 3, y] == 1 && this.level[xMid + 2, y] == 1)
+                    || !(this.level[xMid - 2, y] == 0 && this.level[xMid - 1, y] == 0 && this.level[xMid, y] == 0 && this.level[xMid + 1, y] == 0) && this.level[xMid - 3, y] == 0 && this.level[xMid + 2, y] == 0)
+                {
+                    if ((Mathf.RoundToInt(room1.xMin) >= xMid - 2 && Mathf.RoundToInt(room1.xMin) <= xMid + 2) || (Mathf.RoundToInt(room1.xMax) >= xMid - 2 && Mathf.RoundToInt(room1.xMax) <= xMid + 2))
+                    {
+                        for (int j = room1.yMin; j <= room1.yMax; j++)
+                        {
+                            for (int i = xMid - 2; i <= xMid + 1; i++)
+                            {
+                                this.level[i, j] = 1;
+                            }
+                        }
+                    }
+                    if ((Mathf.RoundToInt(room2.xMin) >= xMid - 2 && Mathf.RoundToInt(room2.xMin) <= xMid + 2) || (Mathf.RoundToInt(room2.xMax) >= xMid - 2 && Mathf.RoundToInt(room2.xMax) <= xMid + 2))
+                    {
+                        for (int j = room2.yMin; j <= room2.yMax; j++)
+                        {
+                            for (int i = xMid - 2; i <= xMid + 1; i++)
+                            {
+                                this.level[i, j] = 1;
+                            }
+                        }
+                    }
+                }
+            }
+            else
+            {
+                if (y < (Mathf.Max(y1, y2) - 2) && this.hallways[xMid - 2, y] == 1)
+                {
+                    Debug.Log("Math: " + y1 + " " + y2);
+                    //if (this.hallwaysT[xMid - 2, y] == 1 || this.hallways[xMid - 2, y] == 0)
+                    //{
+                    //    this.hallwaysT[xMid - 2, y] = 0;
+                    //}
+                    //if (this.hallwaysT[xMid - 1, y] == 1 || this.hallways[xMid - 1, y] == 0)
+                    //{
+                    //    this.hallwaysT[xMid - 1, y] = 0;
+                    //}
+                    //if (this.hallwaysT[xMid, y] == 1 || this.hallways[xMid, y] == 0)
+                    //{
+                    //    this.hallwaysT[xMid, y] = 0;
+                    //}
+                    //if (this.hallways[xMid + 1, y] == 1 || this.hallways[xMid + 1, y] == 0)
+                    //{
+                    //    this.hallwaysT[xMid + 1, y] = 0;
+                    //}
+                    this.hallwaysT[xMid - 2, y] = 0;
+                    this.hallwaysT[xMid - 1, y] = 0;
+                    this.hallwaysT[xMid, y] = 0;
+                    this.hallwaysT[xMid + 1, y] = 0;
+                }
+
+                //    if (stamina > 0)
+                //    {
+                //        this.hallwaysT[xMid - 2, y] = 0;
+                //        this.hallwaysT[xMid - 1, y] = 0;
+                //        this.hallwaysT[xMid, y] = 0;
+                //        this.hallwaysT[xMid + 1, y] = 0;
+                //        stamina--;
+                //    } else
+                //    {
+
+                //    }
+                //}
+            }
+
+        }
+        yMid = y2;
+        xMid = x1;
+    }
+
+    void Update()
+    {
+        if (drawDeluanay)
+        {
+            DrawDebugGraph(this.meshEdges, Color.red);
+        }
+        if (drawMST)
+        {
+            DrawDebugGraph(this.mstEdges, Color.green);
+        }
+        if (drawDeluanayShortcuts)
+        {
+            DrawDebugGraph(this.deluanayEdges, Color.blue);
+        }
+    }
+
+    void DrawDebugGraph(List<Edge> edges, Color color)
+    {
+        if (mesh != null)
+        {
+            foreach (Edge edge in edges)
+            {
+                Vertex v0 = mesh.vertices[edge.P0];
+                Vertex v1 = mesh.vertices[edge.P1];
+                Vector3 p0 = new Vector3((float)v0.x, (float)v0.y, 0.0f);
+                Vector3 p1 = new Vector3((float)v1.x, (float)v1.y, 0.0f);
+                Debug.DrawLine(p0, p1, color, Time.deltaTime, false);
+            }
+        }
+    }
+
+    class DisjointSet
+    {
+        Dictionary<Vertex, Vertex> parent = new Dictionary<Vertex, Vertex>();
+        int[] dist;
+        public void MakeSet(HashSet<Vertex> vertices)
+        {
+            foreach (Vertex vertex in vertices)
+            {
+                parent.Add(vertex, vertex);
+            }
+        }
+
+        public Vertex Find(Vertex k)
+        {
+            if (parent[k] == k)
+            {
+                return k;
+            }
+            return Find(parent[k]);
+        }
+
+        public void Union(Vertex a, Vertex b)
+        {
+            Vertex x = Find(a);
+            Vertex y = Find(b);
+            if (parent.ContainsKey(x))
+            {
+                parent[x] = y;
+            }
+            else
+            {
+                parent.Add(x, y);
+            }
+        }
+
+        //public void printSet(int v, List<Edge> mst, TriangleNet.Mesh mesh, H)
+        //{
+        //    List<Vertex> vertices = new List<Vertex>();
+        //    Edge[] mstArr = mst.ToArray();
+
+        //    for (int i = 0; i < mstArr.Length; i++)
+        //    {
+        //        Vertex v0 = mesh.vertices[mstArr[i].P0];
+        //        Vertex v1 = mesh.vertices[mstArr[i].P1];
+        //        //Debug.Log(weightsArr[i] + "- x0: " + (float)v0.x + " y0: " + (float)v0.y + " x1: " + (float)v1.x + " y1: " + (float)v1.y);
+        //        vertices.Add(v0);
+        //        vertices.Add(v1);
+        //    }
+        //    vertices.
+        //    dist = new int[v];
+        //    for (int i = 0; i < v; i++)
+        //    {
+        //        dist[i] = -1;
+        //    }
+        //    Queue<int> q = new Queue<int>();
+
+
+        //    Debug.Log("Parent: " + parent.ToString());
+        //}
+
+    }
+
+    public class Leaf
+    {
+        public int x;
+        public int y;
+        public int width;
+        public int height;
+        public Leaf child1;
+        public Leaf child2;
+        public int min_width = 15;
+        public int min_height = 12;
+
+        private RectInt room;
+        public Leaf(int x, int y, int width, int height)
+        {
+            this.x = x;
+            this.y = y;
+            this.width = width;
+            this.height = height;
+            this.room = new RectInt(0, 0, 0, 0);
+        }
+
+        public bool SplitLeaf()
+        {
+            if (child1 != null || child2 != null)
+            {
+                return false;
+            }
+
+            bool splitHor = true;
+            if (Random.Range(0, 100) < 50)
+            {
+                splitHor = false;
+            }
+
+            if (this.width > this.height)
+            {
+                splitHor = false;
+            }
+            else if (this.height > this.width)
+            {
+                splitHor = true;
+            }
+
+            int max;
+
+            if (splitHor)
+            {
+                max = this.height - this.min_height;
+                if (max < this.min_height)
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                max = this.width - this.min_width;
+                if (max < this.min_width)
+                {
+                    return false;
+                }
+            }
+
+            int split;
+
+            if (splitHor)
+            {
+                split = Mathf.RoundToInt(Random.Range(this.min_height, Mathf.RoundToInt(max * 0.75f)));
+                this.child1 = new Leaf(this.x, this.y, this.width - 1, split - 1);
+
+                this.child2 = new Leaf(this.x, this.y + split, this.width - 1, this.height - split - 1);
+            }
+            else
+            {
+                split = Mathf.RoundToInt(Random.Range(this.min_width, max));
+                this.child1 = new Leaf(this.x, this.y, split, this.height - 1);
+
+                this.child2 = new Leaf(this.x + split, this.y, this.width - split, this.height - 1);
+            }
+            return true;
+        }
+
+        public void CreateRooms(ProceduralMapGenerator bspTree)
+        {
+            if (child1 != null || child2 != null)
+            {
+                if (child1 != null)
+                {
+                    child1.CreateRooms(bspTree);
+
+                }
+                if (child2 != null)
+                {
+                    child2.CreateRooms(bspTree);
+                }
+            }
+            else
+            {
+                int w = Mathf.RoundToInt(Random.Range(min_width, Mathf.Min(bspTree.maxRoomSize, this.width - 2))) - 3;
+                int h = Mathf.RoundToInt(Random.Range(min_height, Mathf.Min(bspTree.maxRoomSize, this.height - 2))) - 3;
+                int x = Mathf.RoundToInt(Random.Range(this.x, this.x + (this.width - 2) - w)) + 2;
+                int y = Mathf.RoundToInt(Random.Range(this.y, this.y + (this.height - 2) - h)) + 2;
+
+                this.room = new RectInt(x, y, w, h);
+                bspTree.CreateRoom(this.room);
+            }
+        }
+
+        RectInt GetRoom()
+        {
+            if (!room.Equals(new RectInt(0, 0, 0, 0)))
+            {
+                return room;
+            }
+            else
+            {
+                RectInt room1 = new RectInt(0, 0, 0, 0);
+                RectInt room2 = new RectInt(0, 0, 0, 0);
+                if (this.child1 != null)
+                {
+                    room1 = child1.GetRoom();
+                }
+
+                if (this.child2 != null)
+                {
+                    room2 = child2.GetRoom();
+                }
+
+                if (!room1.Equals(new RectInt(0, 0, 0, 0)) || !room2.Equals(new RectInt(0, 0, 0, 0)))
+                {
+                    return new RectInt(0, 0, 0, 0);
+                }
+                else if (!room2.Equals(new RectInt(0, 0, 0, 0)))
                 {
                     return room1;
                 }
-                else
+                else if (!room1.Equals(new RectInt(0, 0, 0, 0)))
                 {
                     return room2;
+                }
+                else
+                {
+                    if (Random.Range(0, 100) < 50)
+                    {
+                        return room1;
+                    }
+                    else
+                    {
+                        return room2;
+                    }
                 }
             }
         }

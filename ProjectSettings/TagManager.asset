@@ -3,7 +3,12 @@
 --- !u!78 &1
 TagManager:
   serializedVersion: 2
-  tags: []
+  tags:
+  - UI
+  - Hearts
+  - Enemy
+  - Dungeon
+  - Key
   layers:
   - Default
   - TransparentFX
@@ -11,12 +16,12 @@ TagManager:
   - 
   - Water
   - UI
+  - Walls
   - World Boundary
-  - 
-  - 
-  - 
-  - 
-  - 
+  - MiniMap
+  - Characters
+  - Enemies
+  - Items
   - 
   - 
   - 
@@ -41,9 +46,18 @@ TagManager:
   - name: Default
     uniqueID: 0
     locked: 0
+  - name: UI
+    uniqueID: 2087383287
+    locked: 0
   - name: Player
     uniqueID: 440034605
     locked: 0
   - name: Walls
     uniqueID: 3591425647
+    locked: 0
+  - name: MiniMap Elements
+    uniqueID: 256749757
+    locked: 0
+  - name: Enemies
+    uniqueID: 3191178685
     locked: 0

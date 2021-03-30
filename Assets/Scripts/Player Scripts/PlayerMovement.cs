@@ -16,13 +16,37 @@ public class PlayerMovement : MonoBehaviour
     public bool disableMovement;
     public Animator animator;
     private Vector2 moveDirection;
-    public Rigidbody2D rb;
     
+    public Rigidbody2D rb;
+    [HideInInspector] private float walkTime;
+    public PlayerStats playerStats;
+    public PlayerCombat playerCombat;
+
+    [Header("IFrame Stuff")]
+    public Color flashColor;
+    public Color regularColor;
+    public float flashDuration;
+    public int numberOfFlashes;
+    public SpriteRenderer mySprite;
     private void Awake()
     {
         currentState = PlayerState.walk;
         rb = GetComponent<Rigidbody2D>();
         animator.SetFloat("LastVert", -1);
+        playerStats = GetComponent<PlayerStats>();
+        mySprite = GetComponent<SpriteRenderer>();
+        playerCombat = GetComponent<PlayerCombat>();
+    }
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (collision.collider.CompareTag("Enemy"))
+        {
+            SoundManager.PlaySound("playerHit");
+            playerCombat.combatEnabled = false;
+            Physics2D.IgnoreLayerCollision(9, 10, true);
+            StartCoroutine(FlashCo());
+            StartCoroutine(CollisionCo(flashDuration* (float) numberOfFlashes*2));
+        }
     }
     void ProcessInputs()
     {
@@ -79,12 +103,21 @@ public class PlayerMovement : MonoBehaviour
         {
             //if (moveDirection.sqrMagnitude > 1) // Only normalize if necessary
             //{
-               moveDirection = moveDirection.normalized;
+            
+            moveDirection = moveDirection.normalized;
             //}
+            if (walkTime < 0f && moveDirection.sqrMagnitude>0.001f)
+            {
+                SoundManager.PlaySound("playerWalk");
+                Debug.Log("PlayerWalk");
+                walkTime = 0.5f;
+            }
+            walkTime = walkTime - Time.deltaTime;
             rb.velocity = new Vector2((Mathf.Round((moveDirection.x * moveSpeed * Time.deltaTime)/0.0625f)*0.0625f), (Mathf.Round((moveDirection.y * moveSpeed * Time.deltaTime) / 0.0625f)*0.0625f));
         }
         else
         {
+            walkTime = 0.5f;
             rb.velocity = new Vector2(0, 0);
         }
 
@@ -114,5 +147,26 @@ public class PlayerMovement : MonoBehaviour
     void EnableMovement()
     {
         disableMovement = false;
+    }
+
+    private IEnumerator FlashCo()
+    {
+        playerStats.health -= 1;
+        int temp = 0;
+        while(temp < numberOfFlashes)
+        {
+            mySprite.color = flashColor;
+            yield return new WaitForSeconds(flashDuration);
+            mySprite.color = regularColor;
+            yield return new WaitForSeconds(flashDuration);
+            temp++;
+        }
+        
+    }
+    private IEnumerator CollisionCo(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        Physics2D.IgnoreLayerCollision(9, 10, false);
+        playerCombat.combatEnabled = true;
     }
 }

@@ -217,7 +217,7 @@ InputManager:
     m_Name: Fire3
     descriptiveName: 
     descriptiveNegativeName: 
-    negativeButton: 
+    negativeButton: j
     positiveButton: joystick button 2
     altNegativeButton: 
     altPositiveButton: 
@@ -233,7 +233,7 @@ InputManager:
     m_Name: Jump
     descriptiveName: 
     descriptiveNegativeName: 
-    negativeButton: 
+    negativeButton: k
     positiveButton: joystick button 3
     altNegativeButton: 
     altPositiveButton: 

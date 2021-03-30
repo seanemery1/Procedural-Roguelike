@@ -10,15 +10,26 @@ public class Seed : MonoBehaviour
 
     private void Awake()
     {
-        if (GameSeed.Equals("Default"))
-        {
-            CurrentSeed = DateTime.Now.Ticks.GetHashCode();
-            UnityEngine.Random.InitState(CurrentSeed);
-        } else
-        {
-            CurrentSeed = GameSeed.GetHashCode();
-            UnityEngine.Random.InitState(CurrentSeed);
-        }
+        
+            int number;
+            bool success = int.TryParse(GameSeed, out number);
+            if (success)
+            {
+                CurrentSeed = number;
+                UnityEngine.Random.InitState(number);
+            }
+            else if (GameSeed.Equals("Default"))
+            {
+                CurrentSeed = DateTime.Now.Ticks.GetHashCode();
+                UnityEngine.Random.InitState(CurrentSeed);
+            }
+            else
+            {
+                CurrentSeed = GameSeed.GetHashCode();
+                UnityEngine.Random.InitState(CurrentSeed);
+            }
+        
+        
         
     }
 }

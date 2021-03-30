@@ -4,8 +4,8 @@ using UnityEngine;
 
 public class PlayerCombat : MonoBehaviour
 {
-    [SerializeField]
-    private bool combatEnabled;
+    
+    public bool combatEnabled;
     [SerializeField]
     private float inputTimer, attackRadius, attackDamage;
     [SerializeField]
@@ -51,6 +51,7 @@ public class PlayerCombat : MonoBehaviour
                 gotInput = false;
                 isAttacking = true;
                 animator.SetBool("isAttacking", isAttacking);
+                SoundManager.PlaySound("playerAttack");
 
             }
             //Perform attack
