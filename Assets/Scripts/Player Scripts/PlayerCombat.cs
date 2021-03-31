@@ -82,6 +82,5 @@ public class PlayerCombat : MonoBehaviour
     {
         Gizmos.color = Color.white;
         Gizmos.DrawWireSphere(attackHitBoxPos.position, attackRadius);
-        Debug.Log("I am working");
     }
 }

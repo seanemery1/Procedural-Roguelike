@@ -12,8 +12,7 @@ public class FieldOfView : MonoBehaviour
     Collider2D[] targetsInRadius;
     public List<Transform> visibleTargets = new List<Transform>();
     private void Start()
-    {
-        
+    { 
         //Physics2D.queriesStartInColliders = false;
     }
     public Vector3 DirFromAngle (float angleDeg, bool global)
@@ -23,32 +22,11 @@ public class FieldOfView : MonoBehaviour
             angleDeg += transform.eulerAngles.z;
         }
         return new Vector2(Mathf.Cos(angleDeg * Mathf.Deg2Rad), Mathf.Sin(angleDeg * Mathf.Deg2Rad));
-        // public Vector3 DirFromAngle(float angleInDegrees)
-        //{
-        //    return new Vector3(Mathf.Sin(angleInDegrees * Mathf.Deg2Rad), Mathf.Cos(angleInDegrees * Mathf.Deg2Rad));
-        //    ;
-        //}
     }
 
-    //private void FixedUpdate()
-    //{
-        
-    //}
-    private void LateUpdate()
-    {
-
-        //foreach (Transform transform in visibleTargets)
-        //{
-        //    transform.SendMessage("InFOV");
-        //}
-    }
     private void Update()
     {
         FindVisibileTargets();
-        //foreach (Transform transform in visibleTargets)
-        //{
-        //    
-        //}
     }
     void FindVisibileTargets()
     {
@@ -67,19 +45,6 @@ public class FieldOfView : MonoBehaviour
                     visibleTargets.Add(target);
                     target.gameObject.GetComponent<Visibility>().isVisible = true;
                 }
-            //}
         }
     }
-    //void Update()
-    //{
-    //    RaycastHit2D hitInfo = Physics2D.CircleCast(transform.position, 1f, transform.right, 10f);
-    //   // RaycastHit2D hitInfo = Physics2D.Raycast(transform.position, transform.right, distance);
-    //    if (hitInfo.collider != null)
-    //    {
-    //        Debug.DrawLine(transform.position, hitInfo.point, Color.magenta);
-    //    } else
-    //    {
-    //        Debug.DrawLine(transform.position, transform.position + transform.right * distance, Color.cyan);
-    //    }
-    //}
 }

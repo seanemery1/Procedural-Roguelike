@@ -108,15 +108,20 @@ public class PopulateDungeon : MonoBehaviour
             {
                 if (distancesArr[i + 1] == distancesArr[i + 2])
                 {
-                    HashSet<Vertex> neighbors = new HashSet<Vertex>();
+                    HashSet<Vertex> neighbors1 = new HashSet<Vertex>();
+                    HashSet<Vertex> neighbors2 = new HashSet<Vertex>();
                     foreach (Edge edge in mapData.mstEdges)
                     {
                         Vertex v0 = mapData.mesh.vertices[edge.P0];
                         Vertex v1 = mapData.mesh.vertices[edge.P1];
                         if (v0.Equals(verticesArr[i + 1]) || v1.Equals(verticesArr[i + 1]))
                         {
-                            neighbors.Add(v0);
-                            neighbors.Add(v1);
+                            neighbors1.Add(v0);
+                            neighbors1.Add(v1);
+                        }
+                        if (v0.Equals(verticesArr[i + 2]) || v1.Equals(verticesArr[i + 2])) {
+                            neighbors2.Add(v0);
+                            neighbors2.Add(v1);
                         }
                     }
                     if (i+2== distancesArr.Length - 1)
@@ -127,14 +132,14 @@ public class PopulateDungeon : MonoBehaviour
                         lockedRooms.Add(verticesArr[i + 2]);
                         endIsLocked = true;
                     }
-                    else if (neighbors.Count <= 2)
+                    else if (neighbors1.Count < neighbors2.Count)
                     {
                         SpawnKey(mapData.FindRoom(verticesArr[i + 1]), 0f);
                         SpawnDoors(verticesArr[i], verticesArr[i + 2]);
                         keyRooms.Add(verticesArr[i + 1]);
                         lockedRooms.Add(verticesArr[i + 2]);
                     }
-                    else
+                    else if (neighbors1.Count > neighbors2.Count)
                     {
                         SpawnKey(mapData.FindRoom(verticesArr[i + 2]), 0f);
                         SpawnDoors(verticesArr[i], verticesArr[i + 1]);

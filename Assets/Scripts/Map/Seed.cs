@@ -10,7 +10,6 @@ public class Seed : MonoBehaviour
 
     private void Awake()
     {
-        
             int number;
             bool success = int.TryParse(GameSeed, out number);
             if (success)
@@ -28,8 +27,5 @@ public class Seed : MonoBehaviour
                 CurrentSeed = GameSeed.GetHashCode();
                 UnityEngine.Random.InitState(CurrentSeed);
             }
-        
-        
-        
     }
 }

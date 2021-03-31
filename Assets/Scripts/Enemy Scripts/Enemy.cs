@@ -27,16 +27,4 @@ public class Enemy : MonoBehaviour
     public bool isWalk;
     public bool isAttack;
     public bool isStunned;
-
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
 }

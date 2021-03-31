@@ -8,7 +8,6 @@ public class SkeletonAI : Enemy
     public Transform target;
     public PolygonCollider2D playerTrigger;
     
-    
     public float horizontal;
     public float vertical;
     public Vector2 playerPosition;
@@ -18,7 +17,6 @@ public class SkeletonAI : Enemy
     public float flashDuration;
     public int numberOfFlashes;
     public SpriteRenderer mySprite;
-    // Start is called before the first frame update
 
     void Start()
     {
@@ -194,7 +192,6 @@ public class SkeletonAI : Enemy
             currentState = EnemyState.walk;
             animator.SetBool("isWalking", true);
             
-            //animator.SetBool("isIdle", false);
             isIdle = false;
         } else
         {
@@ -203,7 +200,6 @@ public class SkeletonAI : Enemy
         }
         if (!isIdle)
         {
-            //animator.SetBool("isIdle", true);
             isIdle = true;
             
             switch (Random.Range(0, 4))
@@ -275,8 +271,4 @@ public class SkeletonAI : Enemy
             
         }
     }
-    // Update is called once per frame
-
-    //rb.velocity = new Vector2((Mathf.Round((moveDirection.x * moveSpeed * Time.deltaTime) / 0.0625f) * 0.0625f), (Mathf.Round((moveDirection.y * moveSpeed * Time.deltaTime) / 0.0625f) * 0.0625f));
-
 }

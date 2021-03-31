@@ -501,6 +501,7 @@ public class ProceduralMapGenerator : MonoBehaviour
             }
             for (int x = Mathf.Max(room2.xMin, room1.xMin) - 1; x >= xMid; x--)
             {
+
                 if ((this.level[x, yMid - 3] == 1 || this.level[x, yMid - 2] == 1 || this.level[x, yMid - 1] == 1 || this.level[x, yMid] == 1 || this.level[x, yMid + 1] == 1 || this.level[x, yMid + 2] == 1))
                 {
                     swap = true;
@@ -511,33 +512,12 @@ public class ProceduralMapGenerator : MonoBehaviour
             {
                 if (this.level[xMid - 3, y] == 1 || this.level[xMid - 2, y] == 1 || this.level[xMid - 1, y] == 1 || this.level[xMid, y] == 1 || this.level[xMid + 1, y] == 1 || this.level[xMid + 2, y] == 1)
                 {
-                    //if ((room1.Contains(new Vector2Int(xMid - 3, y))
-                    //    || room1.Contains(new Vector2Int(xMid - 2, y))
-                    //    || room1.Contains(new Vector2Int(xMid - 1, y))
-                    //    || room1.Contains(new Vector2Int(xMid, y))
-                    //    || room1.Contains(new Vector2Int(xMid + 1, y))
-                    //    || room1.Contains(new Vector2Int(xMid + 2, y))
-                    //    || room2.Contains(new Vector2Int(xMid - 3, y))
-                    //    || room2.Contains(new Vector2Int(xMid - 2, y))
-                    //    || room2.Contains(new Vector2Int(xMid - 1, y))
-                    //    || room2.Contains(new Vector2Int(xMid, y))
-                    //    || room2.Contains(new Vector2Int(xMid + 1, y))
-                    //    || room2.Contains(new Vector2Int(xMid + 2, y))))
-                    //{
-
-                    //} else
-                    //{
-                    Debug.Log("x2: swap trueY2");
                     swap = true;
-                    //}
-
-
                 }
 
             }
             if (swap)
             {
-                Debug.Log("x2: swapped");
                 yMid = y1;
                 xMid = x2;
             }
@@ -591,41 +571,12 @@ public class ProceduralMapGenerator : MonoBehaviour
                     this.hallwaysT[x, yMid - 1] = 0;
                     this.hallwaysT[x, yMid] = 0;
                     this.hallwaysT[x, yMid + 1] = 0;
-
-                    //if (stamina>0)
-                    //{
-                    //    //this.hallwaysT[x, yMid - 2] = 0;
-                    //    //this.hallwaysT[x, yMid - 1] = 0;
-                    //    //this.hallwaysT[x, yMid] = 0;
-                    //    //this.hallwaysT[x, yMid + 1] = 0;
-                    //    if (this.hallwaysT[x, yMid - 2] == 1 || this.hallways[x, yMid - 2] == 0)
-                    //{
-                    //    this.hallwaysT[x, yMid - 2] = 0;
-                    //}
-                    //if (this.hallwaysT[x, yMid - 1] == 1 || this.hallways[x, yMid - 1] == 0)
-                    //{
-                    //    this.hallwaysT[x, yMid - 1] = 0;
-                    //}
-                    //if (this.hallwaysT[x, yMid] == 1 || this.hallways[x, yMid] == 0)
-                    //{
-                    //    this.hallwaysT[x, yMid] = 0;
-                    //}
-                    //if (this.hallwaysT[x, yMid + 1] == 1 || this.hallways[x, yMid + 1] == 0)
-                    //{
-                    //    this.hallwaysT[x, yMid + 1] = 0;
                 }
-                //    stamina--;
-                //}
-                //this.hallwaysT[x, yMid - 2] = 0;
-                //this.hallwaysT[x, yMid - 1] = 0;
-                //this.hallwaysT[x, yMid] = 0;
-                //this.hallwaysT[x, yMid + 1] = 0;
             }
         }
 
         for (int y = Mathf.Min(y1, y2) - 2; y <= Mathf.Max(y1, y2) + 1; y++)
         {
-            // if hallways are clear
             if (!(this.hallways[xMid - 3, y] == 1 || this.hallways[xMid - 2, y] == 1 || this.hallways[xMid - 1, y] == 1 || this.hallways[xMid, y] == 1 || this.hallways[xMid + 1, y] == 1 || this.hallways[xMid + 2, y] == 1))
             {
                 this.hallwaysT[xMid - 2, y] = 1;
@@ -662,41 +613,11 @@ public class ProceduralMapGenerator : MonoBehaviour
             {
                 if (y < (Mathf.Max(y1, y2) - 2) && this.hallways[xMid - 2, y] == 1)
                 {
-                    Debug.Log("Math: " + y1 + " " + y2);
-                    //if (this.hallwaysT[xMid - 2, y] == 1 || this.hallways[xMid - 2, y] == 0)
-                    //{
-                    //    this.hallwaysT[xMid - 2, y] = 0;
-                    //}
-                    //if (this.hallwaysT[xMid - 1, y] == 1 || this.hallways[xMid - 1, y] == 0)
-                    //{
-                    //    this.hallwaysT[xMid - 1, y] = 0;
-                    //}
-                    //if (this.hallwaysT[xMid, y] == 1 || this.hallways[xMid, y] == 0)
-                    //{
-                    //    this.hallwaysT[xMid, y] = 0;
-                    //}
-                    //if (this.hallways[xMid + 1, y] == 1 || this.hallways[xMid + 1, y] == 0)
-                    //{
-                    //    this.hallwaysT[xMid + 1, y] = 0;
-                    //}
                     this.hallwaysT[xMid - 2, y] = 0;
                     this.hallwaysT[xMid - 1, y] = 0;
                     this.hallwaysT[xMid, y] = 0;
                     this.hallwaysT[xMid + 1, y] = 0;
                 }
-
-                //    if (stamina > 0)
-                //    {
-                //        this.hallwaysT[xMid - 2, y] = 0;
-                //        this.hallwaysT[xMid - 1, y] = 0;
-                //        this.hallwaysT[xMid, y] = 0;
-                //        this.hallwaysT[xMid + 1, y] = 0;
-                //        stamina--;
-                //    } else
-                //    {
-
-                //    }
-                //}
             }
 
         }
@@ -769,32 +690,6 @@ public class ProceduralMapGenerator : MonoBehaviour
                 parent.Add(x, y);
             }
         }
-
-        //public void printSet(int v, List<Edge> mst, TriangleNet.Mesh mesh, H)
-        //{
-        //    List<Vertex> vertices = new List<Vertex>();
-        //    Edge[] mstArr = mst.ToArray();
-
-        //    for (int i = 0; i < mstArr.Length; i++)
-        //    {
-        //        Vertex v0 = mesh.vertices[mstArr[i].P0];
-        //        Vertex v1 = mesh.vertices[mstArr[i].P1];
-        //        //Debug.Log(weightsArr[i] + "- x0: " + (float)v0.x + " y0: " + (float)v0.y + " x1: " + (float)v1.x + " y1: " + (float)v1.y);
-        //        vertices.Add(v0);
-        //        vertices.Add(v1);
-        //    }
-        //    vertices.
-        //    dist = new int[v];
-        //    for (int i = 0; i < v; i++)
-        //    {
-        //        dist[i] = -1;
-        //    }
-        //    Queue<int> q = new Queue<int>();
-
-
-        //    Debug.Log("Parent: " + parent.ToString());
-        //}
-
     }
 
     public class Leaf
@@ -809,6 +704,7 @@ public class ProceduralMapGenerator : MonoBehaviour
         public int min_height = 12;
 
         private RectInt room;
+
         public Leaf(int x, int y, int width, int height)
         {
             this.x = x;

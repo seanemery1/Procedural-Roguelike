@@ -19,7 +19,6 @@ public class Door : MonoBehaviour
     public Collider2D trigger;
     public Tilemap grid;
     public PlayerStats stats;
-    //public Inventory playerInventory;
 
     private void Awake()
     {
@@ -60,17 +59,8 @@ public class Door : MonoBehaviour
                     {
                         grid.SetTile(lPos, null);
                     }
-                    
-                    // Does the player have a key
-                    // if so, then call the open method
                 }
             }
         }
-    }
-    // Start is called before the first frame update
-    public void Open()
-    {
-        // Delete tile
-        // set open to true
     }
 }

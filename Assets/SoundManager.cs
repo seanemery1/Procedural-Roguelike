@@ -4,7 +4,6 @@ using UnityEngine;
 
 public class SoundManager : MonoBehaviour
 {
-    // Start is called before the first frame update
     public static AudioClip playerAttack, playerHit, playerWalk, doorOpen, doorFail, skeletonHit, skeletonDeath, miscCollect;
     public static AudioSource audioSrc;
 
