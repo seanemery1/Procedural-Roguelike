@@ -32,4 +32,37 @@ public class Enemy : MonoBehaviour
     public bool isWalk;
     public bool isAttack;
     public bool isStunned;
+
+    [Header("IFrame Stuff")]
+    public Color flashColor;
+    public Color regularColor;
+    public float flashDuration;
+    public int numberOfFlashes;
+    public SpriteRenderer mySprite;
+
+  
+    private void Idle()
+    {
+
+    }
+
+    void Attack()
+    {
+        
+    }
+
+    void Walk()
+    {
+       
+    }
+
+    void Stunned()
+    {
+       
+    }
+
+    public void GetHit()
+    {
+      
+    }
 }

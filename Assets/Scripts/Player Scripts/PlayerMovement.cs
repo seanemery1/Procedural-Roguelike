@@ -105,29 +105,27 @@ public class PlayerMovement : MonoBehaviour
         }
 
     }
-    // Update is called once per frame
+    
+    // Inputs are processed per frame in Update() which is variable, while movement/physics are processed in FixedUpdate where time is constant.
     void Update()
     {
-        // Inputs
-     
         ProcessInputs();
-        
-        
-        
-        
-        //transform.position = transform.position + movement * Time.deltaTime;
-
     }
 
+    // Physics calculations happen at fixed intervals for movement.
+    void FixedUpdate()
+    {
+        Move();
+    }
+
+    // Sets player's velocity if the player's movement is not disabled. Plays appropriate sound effects while walking.
     void Move()
     {
         if (!disableMovement)
         {
-            //if (moveDirection.sqrMagnitude > 1) // Only normalize if necessary
-            //{
-            
+            // Normalize direction vectors for consistent speed across both the x/y axis.
             moveDirection = moveDirection.normalized;
-            //}
+            // Only move if detect input is non-zero.
             if (walkTime < 0f && moveDirection.sqrMagnitude>0.001f)
             {
                 SoundManager.PlaySound("playerWalk");
@@ -139,50 +137,28 @@ public class PlayerMovement : MonoBehaviour
         }
         else
         {
+            // If movement is disabled, set velocity to 0.
             walkTime = 0.5f;
             rb.velocity = new Vector2(0, 0);
         }
-
-        
-        //Vector2 temp = new Vector2(moveDirection.x * moveSpeed, moveDirection.y * moveSpeed);
-        //rb.MovePosition(PixelPerfectClamp(rb.position, 16) + PixelPerfectClamp(temp, 16));
     }
 
-    void FixedUpdate()
-    {
-        // Physics
-        
-            Move();
-        
-        
-    }
-    private Vector2 PixelPerfectClamp(Vector2 moveVector, float pixelsPerUnit)
-    {
-        Vector2 vectorInPixels = new Vector2(Mathf.RoundToInt(moveVector.x * pixelsPerUnit), Mathf.RoundToInt(moveVector.x * pixelsPerUnit));
-
-        return vectorInPixels / pixelsPerUnit;
-    }
-    void DisableMovement()
-    {
-        disableMovement = true;
-    }
-    void EnableMovement()
-    {
-        disableMovement = false;
-    }
-
+    // Async coroutine to be called when the player is hit.
+    // Plays a flashing red animation. If the player is supposed to die after being hit, permanently make the character red (in preparation for the Game Over screen).
     private IEnumerator FlashCo(bool isDead)
     {
         int mult = 1;
+        // Extend hit animation if dead (flashes for twice as long when dead).
         if (isDead)
         {
             mult = 2;
         }
+        // Reduce health by 1.
         playerStats.health -= 1;
         int temp = 0;
-        while(temp < numberOfFlashes * mult)
+        // Alternating between red flashing and original sprite
+        while (temp < numberOfFlashes * mult)
         {
-            
             mySprite.color = flashColor;
             yield return new WaitForSeconds(flashDuration);
             mySprite.color = regularColor;
@@ -195,13 +171,21 @@ public class PlayerMovement : MonoBehaviour
         }
         
     }
+
+    // Async coroutine to be called when the player is supposed to die.
+    // Overrides to idle animation, and manually animate the player to make the sprite spin 360 degrees multiple times.
     private IEnumerator DeadCo()
     {
+        // Set animation to idle/dead state.
         animator.SetFloat("Vertical", 0);
         animator.SetFloat("Horizontal", 0);
         animator.SetFloat("Magnitude", 0);
         animator.SetBool("isDead", true);
+
+        // Restores physics collision
         Physics2D.IgnoreLayerCollision(9, 10, false);
+
+        // Manually sets animation variables to make the player rotate 90 at fixed time intervals for some number of loops.
         int temp = 0;
         while (temp < numberOfFlashes)
         {
@@ -219,10 +203,14 @@ public class PlayerMovement : MonoBehaviour
             yield return new WaitForSeconds(flashDuration / 2);
             temp++;
         }
+        // Manually set player's final animation frame to look down (0, -1).
         animator.SetFloat("LastVert", -1);
         animator.SetFloat("LastHorizon", 0);
         
     }
+
+    // Async coroutine to temporarily disable all collisions with enemies and disable attacking.
+    // Renables collision and the ability to attack after a specified delay.
     private IEnumerator CollisionCo(float delay)
     {
         yield return new WaitForSeconds(delay);

@@ -4,15 +4,16 @@ using UnityEngine;
 
 public class SoundManager : MonoBehaviour
 {
+    // Variables to store all the sound effects that will be used.
     public static AudioClip playerAttack, playerHit, playerWalk, playerDeath, doorOpen, doorFail, skeletonHit, skeletonDeath, miscCollect;
     public static AudioSource audioSrc;
     public static float volume;
+
+    // Initialize volume level on Scene load (Menu -> Game).
     private void Awake()
     {
         try
         {
-            //MainMenu menu = GameObject.FindGameObjectWithTag("Settings").GetComponent<MainMenu>();
-            //volume = menu.volume;
             volume = MainMenu.volume;
         }
         catch
@@ -20,6 +21,8 @@ public class SoundManager : MonoBehaviour
             volume = 1f;
         }
     }
+
+    // Initializing all the sound effects before the first frame is called.
     void Start()
     {
         playerAttack = Resources.Load<AudioClip>("Sounds/Player/PlayerAttack");
@@ -35,6 +38,7 @@ public class SoundManager : MonoBehaviour
         audioSrc = GetComponent<AudioSource>();
     }
 
+    // Switch case method to play corresponding sound effects when called upon from other classes.
     public static void PlaySound(string clip)
     {
         switch (clip)

@@ -5,7 +5,7 @@ using UnityEngine;
 public class SkeletonAI : Enemy
 {
 
-    // Extra variables (should probably be inherited from the Enemy parent class).
+    // Extra variables needed specifically by the Skeleton class
     public Animator animator;
     public Transform target;
     public PolygonCollider2D playerTrigger;
@@ -13,17 +13,11 @@ public class SkeletonAI : Enemy
     public float horizontal;
     public float vertical;
     public Vector2 playerPosition;
-    [Header("IFrame Stuff")]
-    public Color flashColor;
-    public Color regularColor;
-    public float flashDuration;
-    public int numberOfFlashes;
-    public SpriteRenderer mySprite;
 
-    // Initializing all the variables
+
+    // Initializing all the variables before the first frame is called.
     void Start()
     {
-      
         isStunned = false;
         isAttack = false;
         isWalk = false;
@@ -41,6 +35,7 @@ public class SkeletonAI : Enemy
         currentState = EnemyState.idle;
         mySprite = GetComponent<SpriteRenderer>();  
     }
+
     // Update method is called every frame and it runs the appropriate methods depending on the enemy's current state.
     private void Update()
     {
@@ -64,7 +59,71 @@ public class SkeletonAI : Enemy
 
         }
     }
-    
+    // Fixed Update method is used for physics calculation (walking/velocities) as time is constant (whereas the deltaTime on Update() is dependent on a variable framerate).
+    private void FixedUpdate()
+    {
+        if (currentState.Equals(EnemyState.walk) || currentState.Equals(EnemyState.attack) || currentState.Equals(EnemyState.stunned))
+        {
+            moveDirection = moveDirection.normalized;
+            rb.velocity = new Vector2((Mathf.Round((moveDirection.x * moveSpeed * Time.deltaTime) / 0.0625f) * 0.0625f), (Mathf.Round((moveDirection.y * moveSpeed * Time.deltaTime) / 0.0625f) * 0.0625f));
+        }
+        else
+        {
+            rb.velocity = new Vector2(0, 0);
+        }
+    }
+    // Check if player runs over the enemy's field of view trigger.
+    private void OnTriggerEnter2D(Collider2D other)
+    {
+        // While enemy is not stunned, check if player is within FOV trigger.
+        if (!currentState.Equals(EnemyState.stunned))
+        {
+            // If player is in FOV (and the skeleton is not stunned), track the player's position and "attack" the player.
+            if (other.gameObject.CompareTag("Player"))
+
+            {
+
+                isAttack = true;
+                moveDirection = new Vector2(other.transform.position.x - transform.position.x, other.transform.position.y - transform.position.y);
+
+                currentState = EnemyState.attack;
+            }
+        }
+        else
+        {
+            isAttack = false;
+        }
+
+    }
+    // Checks if player is still within the enemy's FOV.
+    public void OnTriggerStay2D(Collider2D other)
+    {
+        // While enemy is not stunned, check if player is within FOV trigger.
+        if (!currentState.Equals(EnemyState.stunned))
+        {
+            // If player is in FOV (and the skeleton is not stunned), track the player's position and "attack" the player.
+            if (other.gameObject.CompareTag("Player"))
+            {
+                isAttack = true;
+                moveDirection = new Vector2(other.transform.position.x - transform.position.x, other.transform.position.y - transform.position.y);
+                currentState = EnemyState.attack;
+            }
+        }
+        else
+        {
+            isAttack = false;
+        }
+
+    }
+    // Checks if player has left the enemy's FOV.
+    private void OnTriggerExit2D(Collider2D other)
+    {
+        //if (other.tag == "Player")
+        if (other.gameObject.CompareTag("Player"))
+        {
+            isAttack = false;
+        }
+    }
     // If stunned, stop all animations and reduce the object's velocity to 0 for a specified delay.
     void Stunned()
     {
@@ -93,55 +152,8 @@ public class SkeletonAI : Enemy
             }
         }
     }
-    // Check if player runs over the enemy's field of view trigger.
-    private void OnTriggerEnter2D(Collider2D other)
-    {
-        // While enemy is not stunned, check if player is within FOV trigger.
-        if (!currentState.Equals(EnemyState.stunned))
-        {
-            // If player is in FOV (and the skeleton is not stunned), track the player's position and "attack" the player.
-            if (other.gameObject.CompareTag("Player"))
 
-            {
-                
-                isAttack = true;
-                moveDirection = new Vector2(other.transform.position.x - transform.position.x, other.transform.position.y - transform.position.y);
-
-                currentState = EnemyState.attack;
-            }
-        } else
-        {
-            isAttack = false;
-        }
-
-    }
-    // Checks if player is still with the enemy's FOV.
-    public void OnTriggerStay2D(Collider2D other)
-    {
-        // While enemy is not stunned, check if player is within FOV trigger.
-        if (!currentState.Equals(EnemyState.stunned))
-        {
-            // If player is in FOV (and the skeleton is not stunned), track the player's position and "attack" the player.
-            if (other.gameObject.CompareTag("Player"))
-            {
-                isAttack = true;
-                moveDirection = new Vector2(other.transform.position.x - transform.position.x, other.transform.position.y - transform.position.y);
-                currentState = EnemyState.attack;
-            }
-        } else
-        {
-            isAttack = false;
-        }
-        
-    }
-    private void OnTriggerExit2D(Collider2D other)
-    {
-        //if (other.tag == "Player")
-        if (other.gameObject.CompareTag("Player"))
-        {
-            isAttack = false;
-        }
-    }
+    // If in attacking state, increase walking speed. If attacking, specify delay before transitioning back to idle.
     void Attack()
     {
         if (isAttack)
@@ -171,17 +183,7 @@ public class SkeletonAI : Enemy
         
 
     }
-    private void FixedUpdate()
-    {
-        if (currentState.Equals(EnemyState.walk)|| currentState.Equals(EnemyState.attack)||currentState.Equals(EnemyState.stunned))
-        {
-            moveDirection = moveDirection.normalized;
-            rb.velocity = new Vector2((Mathf.Round((moveDirection.x * moveSpeed * Time.deltaTime) / 0.0625f) * 0.0625f), (Mathf.Round((moveDirection.y * moveSpeed * Time.deltaTime) / 0.0625f) * 0.0625f));
-        } else
-        {
-            rb.velocity = new Vector2(0, 0);
-        }
-    }
+    // If in walking state, set animations to walking.
     void Walk()
     {
         if (waitTime<=0)
@@ -194,6 +196,8 @@ public class SkeletonAI : Enemy
             waitTime -= Time.deltaTime;
         }
     }
+
+    // If in idle state, cease all movement/animations. After a short delay, pick a random direction and start walking in that direction.
     void Idle()
     {
         if (waitTime <=0)
@@ -247,9 +251,31 @@ public class SkeletonAI : Enemy
         }
     }
 
+    // Method to called by a player's class when the enemy gets hit by a player. Reduces enemy health by 1 and plays appropriate damage taken/death animation and sound effects.
+    new public void GetHit()
+    {
+        Debug.Log("Health: " + health);
+        health -= 1;
+        if (health > 0)
+        {
+            SoundManager.PlaySound("skeletonHit");
+            StartCoroutine(FlashCo(false));
+        }
+        else
+        {
+
+            SoundManager.PlaySound("skeletonDeath");
+            StartCoroutine(FlashCo(true));
+
+        }
+    }
+
+    // Async coroutine to be called when the enemy is hit.
+    // Plays a flashing red animation. If the enemy is supposed to die after being hit, then remove object from the game (by making it inactive).
     private IEnumerator FlashCo(bool death)
     {
         int temp = 0;
+        // Alternating between red flashing and original sprite
         while (temp < numberOfFlashes)
         {
             mySprite.color = flashColor;
@@ -258,6 +284,7 @@ public class SkeletonAI : Enemy
             yield return new WaitForSeconds(flashDuration);
             temp++;
         }
+        // If dead, drops a heart 15% of the time and remove self from the game.
         if (death)
         {
             if (Random.Range(0,1000)<15)
@@ -270,21 +297,4 @@ public class SkeletonAI : Enemy
 
     }
 
-    public void GetHit()
-    {
-        Debug.Log("Health: " + health);
-        health -= 1;
-        if (health > 0)
-        {
-            SoundManager.PlaySound("skeletonHit");
-            StartCoroutine(FlashCo(false));
-        }
-        else
-        {
-            
-            SoundManager.PlaySound("skeletonDeath");
-            StartCoroutine(FlashCo(true));
-            
-        }
-    }
 }
