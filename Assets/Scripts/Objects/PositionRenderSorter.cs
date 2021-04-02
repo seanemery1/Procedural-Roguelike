@@ -11,8 +11,8 @@ public class PositionRenderSorter : MonoBehaviour
     [SerializeField]
     private bool runOnlyOnce = false;
 
-    private float timer;
-    private float timerMax = 0.1f;
+    //private float timer;
+    //private float timerMax = 0.1f;
     private Renderer myRenderer;
 
     private void Awake()

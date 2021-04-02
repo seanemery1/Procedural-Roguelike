@@ -25,5 +25,16 @@ public class Knockback : MonoBehaviour
                 }
             }
         }
+        if (other.gameObject.CompareTag("Skeletrax"))
+        {
+            Rigidbody2D enemy = other.GetComponent<Rigidbody2D>();
+            if (enemy != null)
+            {
+                if (enemy.GetComponent<SkeletraxAI>() != null)
+                {
+                    enemy.GetComponent<SkeletraxAI>().GetHit();
+                }
+            }
+        }
     }
 }

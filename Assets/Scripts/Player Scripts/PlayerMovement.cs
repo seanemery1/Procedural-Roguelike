@@ -41,15 +41,34 @@ public class PlayerMovement : MonoBehaviour
     {
         if (collision.collider.CompareTag("Enemy"))
         {
-            SoundManager.PlaySound("playerHit");
-            playerCombat.combatEnabled = false;
+            
             Physics2D.IgnoreLayerCollision(9, 10, true);
-            StartCoroutine(FlashCo());
-            StartCoroutine(CollisionCo(flashDuration* (float) numberOfFlashes*2));
+            if (playerStats.health==1)
+            {
+                SoundManager.PlaySound("playerDeath");
+                playerCombat.combatEnabled = false;
+                disableMovement = true;
+                animator.SetFloat("LastVert", 0);
+                animator.SetFloat("LastHorizon", 0);
+                animator.SetBool("isAttacking", false);
+                StartCoroutine(FlashCo(true));
+                StartCoroutine(DeadCo());
+                StartCoroutine(CollisionCo(flashDuration * (float)numberOfFlashes * 2));
+                FindObjectOfType<GameManager>().EndGame(false);
+                // Death animation
+            } else
+            {
+                SoundManager.PlaySound("playerHit");
+                playerCombat.combatEnabled = false;
+                StartCoroutine(FlashCo(false));
+                StartCoroutine(CollisionCo(flashDuration * (float) numberOfFlashes * 2));
+            }
+            
         }
     }
     void ProcessInputs()
     {
+
         float moveX = Input.GetAxisRaw("Horizontal");
         float moveY = Input.GetAxisRaw("Vertical");
 
@@ -90,7 +109,10 @@ public class PlayerMovement : MonoBehaviour
     void Update()
     {
         // Inputs
+     
         ProcessInputs();
+        
+        
         
         
         //transform.position = transform.position + movement * Time.deltaTime;
@@ -149,18 +171,56 @@ public class PlayerMovement : MonoBehaviour
         disableMovement = false;
     }
 
-    private IEnumerator FlashCo()
+    private IEnumerator FlashCo(bool isDead)
     {
+        int mult = 1;
+        if (isDead)
+        {
+            mult = 2;
+        }
         playerStats.health -= 1;
         int temp = 0;
-        while(temp < numberOfFlashes)
+        while(temp < numberOfFlashes * mult)
         {
+            
             mySprite.color = flashColor;
             yield return new WaitForSeconds(flashDuration);
             mySprite.color = regularColor;
             yield return new WaitForSeconds(flashDuration);
             temp++;
         }
+
+        if (isDead) {
+            mySprite.color = flashColor;
+        }
+        
+    }
+    private IEnumerator DeadCo()
+    {
+        animator.SetFloat("Vertical", 0);
+        animator.SetFloat("Horizontal", 0);
+        animator.SetFloat("Magnitude", 0);
+        animator.SetBool("isDead", true);
+        Physics2D.IgnoreLayerCollision(9, 10, false);
+        int temp = 0;
+        while (temp < numberOfFlashes)
+        {
+            animator.SetFloat("LastVert", -1);
+            animator.SetFloat("LastHorizon", 0);
+            yield return new WaitForSeconds(flashDuration / 2);
+            animator.SetFloat("LastVert", 0);
+            animator.SetFloat("LastHorizon", 1);
+            yield return new WaitForSeconds(flashDuration / 2);
+            animator.SetFloat("LastVert", 1);
+            animator.SetFloat("LastHorizon", 0);
+            yield return new WaitForSeconds(flashDuration / 2);
+            animator.SetFloat("LastVert", 0);
+            animator.SetFloat("LastHorizon", -1);
+            yield return new WaitForSeconds(flashDuration / 2);
+            temp++;
+        }
+        animator.SetFloat("LastVert", -1);
+        animator.SetFloat("LastHorizon", 0);
         
     }
     private IEnumerator CollisionCo(float delay)

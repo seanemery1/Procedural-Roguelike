@@ -94,18 +94,18 @@ public class ProceduralMapGenerator : MonoBehaviour
     {
         Vertex temp1 = BreadthFirstSearch(null);
         Vertex temp2 = BreadthFirstSearch(temp1);
-        if (FindRoom(temp1).size.x * FindRoom(temp1).size.y < FindRoom(temp2).size.x * FindRoom(temp2).size.y)
-        {
+        //if (FindRoom(temp1).size.x * FindRoom(temp1).size.y < FindRoom(temp2).size.x * FindRoom(temp2).size.y)
+        //{
             start = temp1;
             end = temp2;
-        }
-        else
-        {
-            start = temp2;
-            end = temp1;
-        }
-        Debug.Log("Start/End x: " + start.x + " y: " + start.y);
-        Debug.Log("Start/End x: " + end.x + " y: " + end.y);
+        //}
+        //else
+        //{
+        //    start = temp2;
+        //    end = temp1;
+        //}
+        //Debug.Log("Start/End x: " + start.x + " y: " + start.y);
+        //Debug.Log("Start/End x: " + end.x + " y: " + end.y);
     }
     Vertex BreadthFirstSearch(Vertex newSource)
     {
@@ -185,7 +185,6 @@ public class ProceduralMapGenerator : MonoBehaviour
                 {
                     dungeonGrid.SetTile(new Vector3Int(x, y, 0), this.dungeon);
                     //minimapGrid.SetTile(new Vector3Int(x, y, 0), this.dungeon);
-                    Debug.Log(x);
                 }
             }
         }
@@ -565,13 +564,13 @@ public class ProceduralMapGenerator : MonoBehaviour
             }
             else
             {
-                if (x < (Mathf.Max(x1, x2) - 2) && this.hallways[x, yMid - 2] == 1)
-                {
-                    this.hallwaysT[x, yMid - 2] = 0;
-                    this.hallwaysT[x, yMid - 1] = 0;
-                    this.hallwaysT[x, yMid] = 0;
-                    this.hallwaysT[x, yMid + 1] = 0;
-                }
+                //if (x < (Mathf.Max(x1, x2) - 2) && this.hallways[x, yMid - 2] == 1)
+                //{
+                //    this.hallwaysT[x, yMid - 2] = 0;
+                //    this.hallwaysT[x, yMid - 1] = 0;
+                //    this.hallwaysT[x, yMid] = 0;
+                //    this.hallwaysT[x, yMid + 1] = 0;
+                //}
             }
         }
 
@@ -611,13 +610,13 @@ public class ProceduralMapGenerator : MonoBehaviour
             }
             else
             {
-                if (y < (Mathf.Max(y1, y2) - 2) && this.hallways[xMid - 2, y] == 1)
-                {
-                    this.hallwaysT[xMid - 2, y] = 0;
-                    this.hallwaysT[xMid - 1, y] = 0;
-                    this.hallwaysT[xMid, y] = 0;
-                    this.hallwaysT[xMid + 1, y] = 0;
-                }
+                //if (y < (Mathf.Max(y1, y2) - 2) && this.hallways[xMid - 2, y] == 1)
+                //{
+                //    this.hallwaysT[xMid - 2, y] = 0;
+                //    this.hallwaysT[xMid - 1, y] = 0;
+                //    this.hallwaysT[xMid, y] = 0;
+                //    this.hallwaysT[xMid + 1, y] = 0;
+                //}
             }
 
         }

@@ -144,7 +144,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &8285493944854517359
 Transform:
   m_ObjectHideFlags: 0
@@ -238,7 +238,7 @@ Transform:
   m_GameObject: {fileID: 8285493944897986554}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 1.2, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 8285493945796763940}
   m_RootOrder: 8
@@ -270,8 +270,8 @@ PolygonCollider2D:
     m_Paths:
     - - {x: 0.5, y: 0}
       - {x: -0.5, y: 0}
-      - {x: -1.2, y: -7}
-      - {x: 1.2, y: -7}
+      - {x: -1.6, y: -8}
+      - {x: 1.6, y: -8}
 --- !u!1 &8285493944943404842
 GameObject:
   m_ObjectHideFlags: 0
@@ -727,7 +727,7 @@ Animator:
   m_Enabled: 1
   m_Avatar: {fileID: 0}
   m_Controller: {fileID: 9100000, guid: c55e400589ba3d841b0d1a960c76c341, type: 2}
-  m_CullingMode: 0
+  m_CullingMode: 2
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
   m_LinearVelocityBlending: 0
@@ -820,7 +820,7 @@ MonoBehaviour:
   startDecisionWaitTime: 0
   moveSpeed: 0
   moveDirection: {x: 0, y: 0}
-  health: 0
+  health: 2
   enemyName: 
   baseAttack: 0
   rb: {fileID: 0}
@@ -831,6 +831,7 @@ MonoBehaviour:
   animator: {fileID: 0}
   target: {fileID: 0}
   playerTrigger: {fileID: 8285493944897986548}
+  heart: {fileID: 5567776636368841297, guid: 31c0aa3b5e3dc784bb59baac9b42f415, type: 3}
   horizontal: 0
   vertical: 0
   playerPosition: {x: 0, y: 0}
@@ -879,7 +880,7 @@ MonoBehaviour:
   - {x: 1, y: -1, z: 0}
   m_ShapePathHash: 0
   m_Mesh: {fileID: 0}
-  m_InstanceId: 61508
+  m_InstanceId: 27688
 --- !u!114 &8285493945796763948
 MonoBehaviour:
   m_ObjectHideFlags: 0

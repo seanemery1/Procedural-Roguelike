@@ -8,11 +8,17 @@ using UnityEngine.Tilemaps;
 public class PopulateDungeon : MonoBehaviour
 {
     public GameObject player;
+    public GameObject skeletonHard;
     public GameObject skeleton;
+    public GameObject skeletrax;
     public GameObject key;
+    public GameObject health;
+    public AnimatedTile spike;
     public RuleTile door;
     public Tilemap doorGrid;
+    public Tilemap spikeGrid;
     ProceduralMapGenerator mapData;
+
     Dictionary<Vertex, int> distances;
     HashSet<Vertex> vertices;
     int[] distancesArr;
@@ -27,16 +33,69 @@ public class PopulateDungeon : MonoBehaviour
         SpawnPlayer();
         SpawnSkeletons();
         SpawnKeysAndDoors();
+        SpawnSkeletrax();
+        SpawnHealth();
+        SpawnSpikes();
+    }
+    //roomBounds.xMin + 2, roomBounds.xMax - 2), Random.Range(roomBounds.yMin + 2, roomBounds.yMax - 4)
+    void SpawnSpikes()
+    {
+        foreach (Vertex vertex in vertices)
+        {
+            RectInt tempRoom = mapData.FindRoom(vertex);
+            bool bossRoom = tempRoom.Equals(mapData.FindRoom(mapData.end));
+            if (!tempRoom.Equals(mapData.FindRoom(mapData.start)))
+            {
+                for (int x = tempRoom.xMin + 1; x <= tempRoom.xMax - 1; x++)
+                {
+                    for (int y = tempRoom.yMin + 2; y <= tempRoom.yMax - 3; y++)
+                    {
+                        if (bossRoom)
+                        {
+                            if (!(x <= tempRoom.center.x + 2 && x >= tempRoom.center.x - 2 && y <= tempRoom.center.y + 2 && y >= tempRoom.center.y - 2))
+                            {
+                                if (Random.Range(0, 100) < 3)
+                                {
+                                    spikeGrid.SetTile(new Vector3Int(x, y, 0), spike);
+                                }
+                            }
+                        } else
+                        {
+                            if (Random.Range(0, 100) < 2)
+                            {
+                                spikeGrid.SetTile(new Vector3Int(x, y, 0), spike);
+                            }
+                        }
+                        
+                    }
+                }
+            }
+            
+        }
+    }
+    void SpawnHealth()
+    {
+        for(int i = 0; i < distancesArr.Length; i++)
+        {
+            RectInt roomBounds = mapData.FindRoom(verticesArr[i]);
+            if (!roomBounds.Equals(mapData.end))
+            {
+                if (Random.Range(0,9)< distancesArr[i])
+                {
+                    Instantiate(health, new Vector3(Random.Range(roomBounds.xMin + 2, roomBounds.xMax - 2) + 0.125f, Random.Range(roomBounds.yMin + 2, roomBounds.yMax - 4) + 0.1875f), Quaternion.identity);
+                }
+                
+            }
+        }
     }
     void SpawnPlayer()
     {
-
         //Instantiate(player, new Vector3((float) mapData.start.x, (float) mapData.start.y, 0), Quaternion.identity);
         player.transform.position = new Vector3((float)mapData.start.x, (float)mapData.start.y, 0);
     }
     void OrientMap()
     {
-        bool inverse = true;
+        //bool inverse = true;
         List<Vertex> verticesList = new List<Vertex>();
         List<int> distancesList = new List<int>();
 
@@ -46,47 +105,71 @@ public class PopulateDungeon : MonoBehaviour
             {
                 if (distances[vertex] == 0)
                 {
-                    inverse = false;
+                    //inverse = false;
                 }
             }
             verticesList.Add(vertex);
             distancesList.Add(distances[vertex]);
         }
-        if (inverse)
-        {
-            int index = 0;
-            foreach (Vertex vertex in vertices)
-            {
+        //if (inverse)
+        //{
+        //    int index = 0;
+        //    foreach (Vertex vertex in vertices)
+        //    {
 
-                distances[vertex] = mapData.maxDistance - distances[vertex];
-                distancesList[index] = mapData.maxDistance - distancesList[index];
-                index++;
-            }
-        }
+        //        distances[vertex] = mapData.maxDistance - distances[vertex];
+        //        distancesList[index] = mapData.maxDistance - distancesList[index];
+        //        index++;
+        //    }
+        //}
         verticesArr = verticesList.ToArray();
         distancesArr = distancesList.ToArray();
         System.Array.Sort(distancesArr, verticesArr);
+        for (int i = 0; i < distancesArr.Length; i++)
+        {
+            Debug.Log("Dist: " + distancesArr[i] + " Vert: " + verticesArr[i]);
+        }
     }
     void SpawnSkeletons()
     {
         RectInt roomBounds;
         foreach (Vertex vertex in vertices)
         {
-            if (!mapData.FindRoom(vertex).Equals(mapData.start) || !mapData.FindRoom(vertex).Equals(mapData.end))
+            roomBounds = mapData.FindRoom(vertex);
+            //if (!mapData.FindRoom(vertex).Equals(mapData.start) )
+            //{
+                
+            for (int i = 0; i < distances[vertex]; i++)
             {
-                roomBounds = mapData.FindRoom(vertex);
-                for (int i = 0; i < distances[vertex]; i++)
+                if (mapData.FindRoom(vertex).Equals(mapData.FindRoom(mapData.end)))
+                {
+                    Instantiate(skeletonHard, new Vector3(Random.Range(roomBounds.xMin + 2, roomBounds.xMax - 2), Random.Range(roomBounds.yMin + 2, roomBounds.yMax - 4)), Quaternion.identity);
+                    Instantiate(skeletonHard, new Vector3(Random.Range(roomBounds.xMin + 2, roomBounds.xMax - 2), Random.Range(roomBounds.yMin + 2, roomBounds.yMax - 4)), Quaternion.identity);
+                    //Instantiate(skeletonHard, new Vector3(Random.Range(roomBounds.xMin + 2, roomBounds.xMax - 2), Random.Range(roomBounds.yMin + 2, roomBounds.yMax - 4)), Quaternion.identity);
+
+                } else
                 {
                     if (Random.Range(0, 100) < 80)
                     {
                         Instantiate(skeleton, new Vector3(Random.Range(roomBounds.xMin + 2, roomBounds.xMax - 2), Random.Range(roomBounds.yMin + 2, roomBounds.yMax - 4)), Quaternion.identity);
                     }
+                    if (i < 3)
+                    {
+                        Instantiate(skeleton, new Vector3(Random.Range(roomBounds.xMin + 2, roomBounds.xMax - 2), Random.Range(roomBounds.yMin + 2, roomBounds.yMax - 4)), Quaternion.identity);
+                    }
                 }
-            }
-            {
+
 
             }
+            //}
+       
         }
+    }
+    void SpawnSkeletrax()
+    {
+        RectInt room = mapData.FindRoom(mapData.end);
+        var boss = Instantiate(skeletrax, new Vector3(room.center.x, room.center.y), Quaternion.identity);
+        boss.GetComponent<SkeletraxAI>().room = room;
     }
     void SpawnKeysAndDoors()
     {
@@ -102,50 +185,86 @@ public class PopulateDungeon : MonoBehaviour
         //lockedRooms.Add(verticesArr[1]);
         
         bool endIsLocked = false;
-        for (int i = 1; i < distancesArr.Length; i++)
+        for (int i = 1; i < distancesArr.Length - 1; i++)
         {
-            if (i + 2 < distancesArr.Length)
+            if (i + 1 < distancesArr.Length)
             {
-                if (distancesArr[i + 1] == distancesArr[i + 2])
+                if (distancesArr[i] == distancesArr[i + 1])
                 {
+
+                    HashSet<Vertex> neighbors0 = new HashSet<Vertex>();
                     HashSet<Vertex> neighbors1 = new HashSet<Vertex>();
-                    HashSet<Vertex> neighbors2 = new HashSet<Vertex>();
                     foreach (Edge edge in mapData.mstEdges)
                     {
                         Vertex v0 = mapData.mesh.vertices[edge.P0];
                         Vertex v1 = mapData.mesh.vertices[edge.P1];
+
+                        if (v0.Equals(verticesArr[i]) || v1.Equals(verticesArr[i]))
+                        {
+                            neighbors0.Add(v0);
+                            neighbors0.Add(v1);
+                        }
                         if (v0.Equals(verticesArr[i + 1]) || v1.Equals(verticesArr[i + 1]))
                         {
                             neighbors1.Add(v0);
                             neighbors1.Add(v1);
                         }
-                        if (v0.Equals(verticesArr[i + 2]) || v1.Equals(verticesArr[i + 2])) {
-                            neighbors2.Add(v0);
-                            neighbors2.Add(v1);
+                    }
+                    Vertex doorHereRoom = null;
+                    foreach (Vertex neighbor in neighbors0)
+                    {
+                        if (neighbors1.Contains(neighbor))
+                        {
+                            doorHereRoom = neighbor;
+                            break;
                         }
                     }
-                    if (i+2== distancesArr.Length - 1)
+                    if (doorHereRoom != null)
                     {
-                        SpawnKey(mapData.FindRoom(verticesArr[i + 1]), 0f);
-                        SpawnDoors(verticesArr[i], verticesArr[i + 2]);
-                        keyRooms.Add(verticesArr[i + 1]);
-                        lockedRooms.Add(verticesArr[i + 2]);
-                        endIsLocked = true;
+                        if (verticesArr[i+1].Equals(mapData.end))
+                        {
+                            if (!endIsLocked)
+                            {
+                                SpawnKey(mapData.FindRoom(verticesArr[i]), 0f);
+                                SpawnDoors(doorHereRoom, verticesArr[i + 1]);
+                                keyRooms.Add(verticesArr[i]);
+                                //lockedRooms.Add(verticesArr[i + 1]);
+                                endIsLocked = true;
+                            }
+                            
+                        }
+                        else if (verticesArr[i].Equals(mapData.end))
+                        {
+                            if (!endIsLocked)
+                            {
+                                SpawnKey(mapData.FindRoom(verticesArr[i + 1]), 0f);
+                                SpawnDoors(doorHereRoom, verticesArr[i]);
+                                keyRooms.Add(verticesArr[i + 1]);
+                                //lockedRooms.Add(verticesArr[i]);
+                                endIsLocked = true;
+                            }
+                            
+                        }
+                        else if (neighbors0.Count < neighbors1.Count)
+                        {
+                            Debug.Log("Door: " + doorHereRoom.x + " " + doorHereRoom.y + " -> " + verticesArr[i + 1].x + " " + verticesArr[i + 1].y);
+                            Debug.Log("Key: " + doorHereRoom.x + " " + doorHereRoom.y + " -> " + verticesArr[i].x + " " + verticesArr[i].y);
+                            SpawnKey(mapData.FindRoom(verticesArr[i]), 0f);
+                            SpawnDoors(doorHereRoom, verticesArr[i + 1]);
+                            keyRooms.Add(verticesArr[i]);
+                            lockedRooms.Add(verticesArr[i + 1]);
+                        }
+                        else if (neighbors0.Count >= neighbors1.Count)
+                        {
+                            Debug.Log("Door: " + doorHereRoom.x + " " + doorHereRoom.y + " -> " + verticesArr[i].x + " " + verticesArr[i].y);
+                            Debug.Log("Key: " + doorHereRoom.x + " " + doorHereRoom.y + " -> " + verticesArr[i + 1].x + " " + verticesArr[i + 1].y);
+                            SpawnKey(mapData.FindRoom(verticesArr[i + 1]), 0f);
+                            SpawnDoors(doorHereRoom, verticesArr[i]);
+                            keyRooms.Add(verticesArr[i + 1]);
+                            lockedRooms.Add(verticesArr[i]);
+                        }
                     }
-                    else if (neighbors1.Count < neighbors2.Count)
-                    {
-                        SpawnKey(mapData.FindRoom(verticesArr[i + 1]), 0f);
-                        SpawnDoors(verticesArr[i], verticesArr[i + 2]);
-                        keyRooms.Add(verticesArr[i + 1]);
-                        lockedRooms.Add(verticesArr[i + 2]);
-                    }
-                    else if (neighbors1.Count > neighbors2.Count)
-                    {
-                        SpawnKey(mapData.FindRoom(verticesArr[i + 2]), 0f);
-                        SpawnDoors(verticesArr[i], verticesArr[i + 1]);
-                        keyRooms.Add(verticesArr[i + 2]);
-                        lockedRooms.Add(verticesArr[i + 1]);
-                    }
+                    
                 }
             }
         }
@@ -156,7 +275,7 @@ public class PopulateDungeon : MonoBehaviour
             {
                 Vertex v0 = mapData.mesh.vertices[edge.P0];
                 Vertex v1 = mapData.mesh.vertices[edge.P1];
-                if (v0.Equals(verticesArr[verticesArr.Length-1]) || v1.Equals(verticesArr[verticesArr.Length - 1]))
+                if (mapData.FindRoom(v0).Equals(mapData.FindRoom(mapData.end)) || mapData.FindRoom(v1).Equals(mapData.FindRoom(mapData.end)))
                 {
                     if (v0.Equals(verticesArr[verticesArr.Length - 1]))
                     {
@@ -177,22 +296,19 @@ public class PopulateDungeon : MonoBehaviour
                 {
                     if (Random.Range(0, 100) < 25)
                     {
-                        SpawnKey(mapData.FindRoom(vertex), 1.5f);
+                        SpawnKey(mapData.FindRoom(vertex), -1.5f);
                         extraKeyPlaced = true;
                         break;
                     }
                 }
-            }
-            
+            }   
         }
-
-
 
     }
 
     void SpawnDoors(Vertex placeDoorHere, Vertex nextRoom)
     {
-
+        Debug.Log("Spawn doors: " + placeDoorHere.x + " " + placeDoorHere.y);
         int x1 = Mathf.RoundToInt((float)placeDoorHere.x);
         int y1 = Mathf.RoundToInt((float)placeDoorHere.y);
 
@@ -204,7 +320,8 @@ public class PopulateDungeon : MonoBehaviour
 
         int xMid = Mathf.RoundToInt((x1 + x2) / 2);
         int yMid = Mathf.RoundToInt((y1 + y2) / 2);
-
+        Debug.Log("yMid: " + yMid + " y1Max " + room1.yMax + " y1Min" + room1.yMin + " y2Max " + room2.yMax + " y2Min" + room2.yMin);
+        //Debug.Log()
         if (yMid <= room1.yMax - 3 && yMid <= room2.yMax - 3 && yMid >= room1.yMin + 2 && yMid >= room2.yMin + 2)
         {
             if (x1 < x2)
@@ -236,10 +353,118 @@ public class PopulateDungeon : MonoBehaviour
         }
         else
         {
+            Debug.Log("else");
             Vector2 vector = new Vector2(room2.x - room1.x, room2.y - room1.y);
-            float angle = Vector2.SignedAngle(Vector2.up, vector);
+            float angle = Mathf.Atan2(room2.y - room1.y, room2.x - room1.x)*Mathf.Rad2Deg;
+            Debug.Log("angle: " + angle);
             bool found = false;
-            if (angle < -90f)
+            if (angle < 90f && angle >= 0f)
+            {
+                if (!found)
+                {
+                    for (int x = room1.xMin; x <= room1.xMax; x++)
+                    {
+                        if (mapData.hallwaysT[x, room1.yMax] == 1)
+                        {
+                            SpawnTopDoor(x + 2, room1.yMax);
+                            found = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (!found)
+                {
+                    for (int y = room1.yMin; y <= room1.yMax; y++)
+                    {
+                        if (mapData.hallwaysT[room1.xMax, y] == 1)
+                        {
+                            SpawnRightDoor(room1.xMax, y + 2);
+                            found = true;
+                            break;
+                        }
+                    }
+                }
+                if (!found)
+                {
+                    for (int y = room1.yMin; y <= room1.yMax; y++)
+                    {
+                        if (mapData.hallways[room1.xMax, y] == 1)
+                        {
+                            SpawnRightDoor(room1.xMax, y + 2);
+                            found = true;
+                            break;
+                        }
+                    }
+                }
+                if (!found)
+                {
+                    for (int x = room1.xMin; x <= room1.xMax; x++)
+                    {
+                        if (mapData.hallways[x, room1.yMax] == 1)
+                        {
+                            SpawnTopDoor(x + 2, room1.yMax);
+                            break;
+                        }
+                    }
+                }
+
+                // scan xMax and Ymax;
+            }
+            else if (angle <= 180f &&angle > 90f)
+            {
+
+                if (!found)
+                {
+                    for (int y = room1.yMin; y <= room1.yMax; y++)
+                    {
+                        if (mapData.hallwaysT[room1.xMin, y] == 1)
+                        {
+                            SpawnLeftDoor(room1.xMin, y + 2);
+                            found = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (!found)
+                {
+                    for (int x = room1.xMin; x <= room1.xMax; x++)
+                    {
+                        if (mapData.hallwaysT[x, room1.yMax] == 1)
+                        {
+                            SpawnTopDoor(x + 2, room1.yMax);
+                            found = true;
+                            break;
+                        }
+                    }
+                }
+                if (!found)
+                {
+                    for (int x = room1.xMin; x <= room1.xMax; x++)
+                    {
+                        if (mapData.hallways[x, room1.yMax] == 1)
+                        {
+                            SpawnTopDoor(x + 2, room1.yMax);
+                            found = true;
+                            break;
+                        }
+                    }
+                }
+                if (!found)
+                {
+                    for (int y = room1.yMin; y <= room1.yMax; y++)
+                    {
+                        if (mapData.hallways[room1.xMin, y] == 1)
+                        {
+                            SpawnLeftDoor(room1.xMin, y + 2);
+                            break;
+                        }
+                    }
+                }
+                //scan yMin and xMax
+            }
+            else if (angle >= -180f && angle < -90f)
             {
                 //scan xMin and Ymin
                 if (!found)
@@ -259,9 +484,9 @@ public class PopulateDungeon : MonoBehaviour
                 {
                     for (int y = room1.yMin; y <= room1.yMax; y++)
                     {
-                        if (mapData.hallwaysT[room1.xMin, room1.yMin] == 1)
+                        if (mapData.hallwaysT[room1.xMin, y] == 1)
                         {
-                            SpawnLeftDoor(room1.xMin, y + 1);
+                            SpawnLeftDoor(room1.xMin, y + 2);
                             found = true;
                             break;
                         }
@@ -271,9 +496,10 @@ public class PopulateDungeon : MonoBehaviour
                 {
                     for (int y = room1.yMin; y <= room1.yMax; y++)
                     {
-                        if (mapData.hallways[room1.xMin, room1.yMin] == 1)
+                        if (mapData.hallways[room1.xMin, y] == 1)
                         {
-                            SpawnLeftDoor(room1.xMin, y + 1);
+                            SpawnLeftDoor(room1.xMin, y + 2);
+                            found = true;
                             break;
                         }
                     }
@@ -285,127 +511,20 @@ public class PopulateDungeon : MonoBehaviour
                         if (mapData.hallways[x, room1.yMin] == 1)
                         {
                             SpawnBotDoor(x + 2, room1.yMin);
-                            found = true;
                             break;
                         }
                     }
                 }
-            }
-            else if (angle < 0f)
-            {
-                
-                if (!found)
-                {
-                    for (int y = room1.yMin; y <= room1.yMax; y++)
-                    {
-                        if (mapData.hallwaysT[room1.xMin, room1.yMin] == 1)
-                        {
-                            SpawnLeftDoor(room1.xMin, y + 1);
-                            found = true;
-                            break;
-                        }
-                    }
-                }
-                
-                if (!found)
-                {
-                    for (int x = room1.xMin; x <= room1.xMax; x++)
-                    {
-                        if (mapData.hallwaysT[x, room1.yMax] == 1)
-                        {
-                            SpawnTopDoor(x + 2, room1.yMax);
-                            found = true;
-                            break;
-                        }
-                    }
-                }
-                if (!found)
-                {
-                    for (int x = room1.xMin; x <= room1.xMax; x++)
-                    {
-                        if (mapData.hallways[x, room1.yMax] == 1)
-                        {
-                            SpawnTopDoor(x + 2, room1.yMax);
-                            found = true;
-                            break;
-                        }
-                    }
-                }
-                if (!found)
-                {
-                    for (int y = room1.yMin; y <= room1.yMax; y++)
-                    {
-                        if (mapData.hallways[room1.xMin, room1.yMin] == 1)
-                        {
-                            SpawnLeftDoor(room1.xMin, y + 1);
-                            break;
-                        }
-                    }
-                }
-                //scan yMin and xMax
-            }
-            else if (angle < 90f)
-            {
-                if (!found)
-                {
-                    for (int x = room1.xMin; x <= room1.xMax; x++)
-                    {
-                        if (mapData.hallwaysT[x, room1.yMax] == 1)
-                        {
-                            SpawnTopDoor(x + 2, room1.yMax);
-                            found = true;
-                            break;
-                        }
-                    }
-                }
-                
-                if (!found)
-                {
-                    for (int y = room1.yMin; y <= room1.yMax; y++)
-                    {
-                        if (mapData.hallwaysT[room1.xMax, room1.yMin] == 1)
-                        {
-                            SpawnRightDoor(room1.xMax, y + 1);
-                            found = true;
-                            break;
-                        }
-                    }
-                }
-                if (!found)
-                {
-                    for (int y = room1.yMin; y <= room1.yMax; y++)
-                    {
-                        if (mapData.hallways[room1.xMax, room1.yMin] == 1)
-                        {
-                            SpawnRightDoor(room1.xMax, y + 1);
-                            break;
-                        }
-                    }
-                }
-                if (!found)
-                {
-                    for (int x = room1.xMin; x <= room1.xMax; x++)
-                    {
-                        if (mapData.hallways[x, room1.yMax] == 1)
-                        {
-                            SpawnTopDoor(x + 2, room1.yMax);
-                            found = true;
-                            break;
-                        }
-                    }
-                }
-
-                // scan xMax and Ymax;
-            }
+            }  
             else
             {
                 if (!found)
                 {
                     for (int y = room1.yMin; y <= room1.yMax; y++)
                     {
-                        if (mapData.hallwaysT[room1.xMax, room1.yMin] == 1)
+                        if (mapData.hallwaysT[room1.xMax, y] == 1)
                         {
-                            SpawnRightDoor(room1.xMax, y + 1);
+                            SpawnRightDoor(room1.xMax, y + 2);
                             found = true;
                             break;
                         }
@@ -440,14 +559,14 @@ public class PopulateDungeon : MonoBehaviour
                 {
                     for (int y = room1.yMin; y <= room1.yMax; y++)
                     {
-                        if (mapData.hallways[room1.xMax, room1.yMin] == 1)
+                        if (mapData.hallways[room1.xMax, y] == 1)
                         {
-                            SpawnRightDoor(room1.xMax, y + 1);
+                            SpawnRightDoor(room1.xMax, y + 2);
                             break;
                         }
                     }
                 }
-                // scan yMax and xMin;
+                // scan yMin and xMax;
             }
             //look for hallway ts;
         }
@@ -478,12 +597,14 @@ public class PopulateDungeon : MonoBehaviour
 
     void SpawnRightDoor(int x, int y)
     {
+        Debug.Log("Right door");
+        Debug.Log("Right " + x + " " + y);
         doorGrid.SetTile(new Vector3Int(x, y - 2, 0), door);
         doorGrid.SetTile(new Vector3Int(x, y - 1, 0), door);
-        //doorGrid.SetTile(new Vector3Int(x, y, 0), door);
+        doorGrid.SetTile(new Vector3Int(x, y, 0), door);
         doorGrid.SetTile(new Vector3Int(x + 1, y - 2, 0), door);
         doorGrid.SetTile(new Vector3Int(x + 1, y - 1, 0), door);
-        doorGrid.SetTile(new Vector3Int(x + 1, y , 0), door);
+        //doorGrid.SetTile(new Vector3Int(x + 1, y , 0), door);
     }
     // X
     // X
@@ -491,6 +612,8 @@ public class PopulateDungeon : MonoBehaviour
     // X
     void SpawnLeftDoor(int x, int y)
     {
+        Debug.Log("Left door");
+        Debug.Log("Left " + x + " " + y);
         doorGrid.SetTile(new Vector3Int(x, y - 2, 0), door);
         doorGrid.SetTile(new Vector3Int(x, y - 1, 0), door);
         doorGrid.SetTile(new Vector3Int(x, y, 0), door);
@@ -506,6 +629,8 @@ public class PopulateDungeon : MonoBehaviour
     //this.hallways[x + 1, y] = 1;
     void SpawnTopDoor(int x, int y)
     {
+        Debug.Log("Top door");
+        Debug.Log("Top " + x + " " + y);
         doorGrid.SetTile(new Vector3Int(x, y - 2, 0), door);
         //doorGrid.SetTile(new Vector3Int(x - 1, y - 2, 0), door);
         doorGrid.SetTile(new Vector3Int(x, y - 1, 0), door);
@@ -516,6 +641,8 @@ public class PopulateDungeon : MonoBehaviour
 
     void SpawnBotDoor(int x, int y)
     {
+        Debug.Log("Bot door");
+        Debug.Log("Bot " + x + " " + y);
         //doorGrid.SetTile(new Vector3Int(x, y - 1, 0), door);
         doorGrid.SetTile(new Vector3Int(x - 1, y - 1, 0), door);
         doorGrid.SetTile(new Vector3Int(x, y, 0), door);

@@ -16,7 +16,7 @@ GameObject:
   - component: {fileID: 236778665950222091}
   - component: {fileID: 5933872286094460318}
   - component: {fileID: -998543478848175272}
-  m_Layer: 0
+  m_Layer: 2
   m_Name: R Door Hidden
   m_TagString: Untagged
   m_Icon: {fileID: 0}

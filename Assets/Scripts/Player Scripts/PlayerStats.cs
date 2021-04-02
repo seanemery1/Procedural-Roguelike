@@ -30,12 +30,18 @@ public class PlayerStats : MonoBehaviour
 
     private void OnCollisionEnter2D(Collision2D other)
     {
-        Debug.Log("Key Hit");
         if (other.collider.CompareTag("Key"))
         {
-            Debug.Log("Key Hit1");
+            Debug.Log("Key Hit");
             numsOfKeys++;
             numsOfKeysText.text = "x" + numsOfKeys.ToString();
+            SoundManager.PlaySound("miscCollect");
+            other.gameObject.SetActive(false);
+        }
+        if (other.collider.CompareTag("Health"))
+        {
+            Debug.Log("Health Hit");
+            health += 2;
             SoundManager.PlaySound("miscCollect");
             other.gameObject.SetActive(false);
         }

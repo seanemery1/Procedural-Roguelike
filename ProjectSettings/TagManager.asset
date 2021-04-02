@@ -9,6 +9,11 @@ TagManager:
   - Enemy
   - Dungeon
   - Key
+  - Skeletrax
+  - PlayerAttack
+  - Settings
+  - TileMap
+  - Health
   layers:
   - Default
   - TransparentFX

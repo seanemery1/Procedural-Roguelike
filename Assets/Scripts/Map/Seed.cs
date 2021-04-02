@@ -5,13 +5,25 @@ using System;
 
 public class Seed : MonoBehaviour
 {
-    public string GameSeed = "Default";
+    public string GameSeed;
     public int CurrentSeed = 0;
+    //
 
-    private void Awake()
+    private void Awake() 
     {
-            int number;
-            bool success = int.TryParse(GameSeed, out number);
+       try
+        {
+            GameSeed = MainMenu.seed;
+           //     = GameObject.FindGameObjectWithTag("Settings").GetComponent<MainMenu>();
+           //GameObject.FindGameObjectWithTag("Settings").GetComponent<MainMenu>().seed = "Default";
+           //GameSeed = menu.seed;
+           
+        } catch
+        {
+            GameSeed = "Default";
+        }
+       int number;
+        bool success = int.TryParse(GameSeed, out number);
             if (success)
             {
                 CurrentSeed = number;

@@ -4,10 +4,12 @@ using UnityEngine;
 
 public class SkeletonAI : Enemy
 {
+
+    // Extra variables (should probably be inherited from the Enemy parent class).
     public Animator animator;
     public Transform target;
     public PolygonCollider2D playerTrigger;
-    
+    public GameObject heart;
     public float horizontal;
     public float vertical;
     public Vector2 playerPosition;
@@ -18,15 +20,17 @@ public class SkeletonAI : Enemy
     public int numberOfFlashes;
     public SpriteRenderer mySprite;
 
+    // Initializing all the variables
     void Start()
     {
+      
         isStunned = false;
         isAttack = false;
         isWalk = false;
         isIdle = false;
         rb = GetComponent<Rigidbody2D>();
         animator = GetComponent<Animator>();
-        health = 2;
+        //health = 2;
         startWaitTime = 0.5f;
         moveSpeed = 150;
         waitTime = startWaitTime;
@@ -35,10 +39,9 @@ public class SkeletonAI : Enemy
         flashDuration = 0.08f;
         numberOfFlashes = 3;
         currentState = EnemyState.idle;
-        mySprite = GetComponent<SpriteRenderer>();
-        
-        
+        mySprite = GetComponent<SpriteRenderer>();  
     }
+    // Update method is called every frame and it runs the appropriate methods depending on the enemy's current state.
     private void Update()
     {
         switch (currentState)
@@ -62,6 +65,7 @@ public class SkeletonAI : Enemy
         }
     }
     
+    // If stunned, stop all animations and reduce the object's velocity to 0 for a specified delay.
     void Stunned()
     {
         if (isStunned)
@@ -89,14 +93,17 @@ public class SkeletonAI : Enemy
             }
         }
     }
-   
+    // Check if player runs over the enemy's field of view trigger.
     private void OnTriggerEnter2D(Collider2D other)
     {
+        // While enemy is not stunned, check if player is within FOV trigger.
         if (!currentState.Equals(EnemyState.stunned))
         {
+            // If player is in FOV (and the skeleton is not stunned), track the player's position and "attack" the player.
             if (other.gameObject.CompareTag("Player"))
 
             {
+                
                 isAttack = true;
                 moveDirection = new Vector2(other.transform.position.x - transform.position.x, other.transform.position.y - transform.position.y);
 
@@ -108,10 +115,13 @@ public class SkeletonAI : Enemy
         }
 
     }
+    // Checks if player is still with the enemy's FOV.
     public void OnTriggerStay2D(Collider2D other)
     {
+        // While enemy is not stunned, check if player is within FOV trigger.
         if (!currentState.Equals(EnemyState.stunned))
         {
+            // If player is in FOV (and the skeleton is not stunned), track the player's position and "attack" the player.
             if (other.gameObject.CompareTag("Player"))
             {
                 isAttack = true;
@@ -250,6 +260,11 @@ public class SkeletonAI : Enemy
         }
         if (death)
         {
+            if (Random.Range(0,1000)<15)
+            {
+                Instantiate(heart, new Vector3(this.gameObject.transform.position.x, this.gameObject.transform.position.y), Quaternion.identity);
+            }
+            
             this.gameObject.SetActive(false);
         }
 
@@ -266,6 +281,7 @@ public class SkeletonAI : Enemy
         }
         else
         {
+            
             SoundManager.PlaySound("skeletonDeath");
             StartCoroutine(FlashCo(true));
             
