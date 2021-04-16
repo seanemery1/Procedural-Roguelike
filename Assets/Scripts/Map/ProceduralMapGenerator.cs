@@ -8,6 +8,7 @@ using TriangleNet.Topology;
 
 public class ProceduralMapGenerator : MonoBehaviour
 {
+    // Parameters that modify the dungeon's size (maximum grid size and maximum/minimum room size)
     [SerializeField]
     public int maxLeafSize = 30;
     [SerializeField]
@@ -23,11 +24,13 @@ public class ProceduralMapGenerator : MonoBehaviour
     [SerializeField]
     public int shortcutChance = 50;
     [SerializeField]
-    public bool drawDeluanay = true;
+    public bool drawDelaunay = true;
     [SerializeField]
     public bool drawMST = true;
     [SerializeField]
-    public bool drawDeluanayShortcuts = true;
+    public bool drawDelaunayShortcuts = true;
+    [SerializeField]
+    public bool drawBSP = true;
     [SerializeField]
     private TileBase dungeon;
     [SerializeField]
@@ -35,15 +38,22 @@ public class ProceduralMapGenerator : MonoBehaviour
     [SerializeField]
     private Tilemap minimapGrid;
 
+    // Variables that stores level info
     public int[,] level;
     public int[,] hallways;
     public int[,] hallwaysT;
     public List<Edge> mstEdges;
-    public List<Edge> deluanayEdges;
+    public List<Edge> delaunayEdges;
+    public Dictionary<Vector3, Vector3> bspDebug;
     private List<Edge> meshEdges;
     private List<Edge> allEdges;
     private List<Edge> tEdges;
     private List<Leaf> leafs;
+
+    // Variables for identifiying Delaunay edge reincorporation candidates
+    private float[] weightsArrSorted;
+    private Edge[] edgesArrSorted;
+    private int indexMaxMSTWeight;
     public Dictionary<Vertex, int> distances;
     private List<RectInt> rooms;
     public HashSet<Vertex> vertices;
@@ -54,20 +64,23 @@ public class ProceduralMapGenerator : MonoBehaviour
     public Vertex end;
     PopulateDungeon populateDungeon;
 
-
+    // Method that initializes some of the variables and sequences the appropriate methods that ultimately creates a procedurally generated dungeon.
     void Start()
     {
         rooms = new List<RectInt>();
+    
         level = generateBSP(this.mapWidth, this.mapHeight);
-        mesh = DeluanayTriangulation();
+        mesh = DelaunayTriangulation();
         meshEdges = new List<Edge>();
+        
         foreach (Edge edge in this.mesh.Edges)
         {
             meshEdges.Add(edge);
         }
 
         FindMST();
-
+        FindGraphDiameter();
+        FilterDelaunayCandidates();
 
         this.hallways = new int[mapWidth, mapHeight];
         this.hallwaysT = new int[mapWidth, mapHeight];
@@ -79,6 +92,9 @@ public class ProceduralMapGenerator : MonoBehaviour
         populateDungeon = GetComponent<PopulateDungeon>();
         populateDungeon.PopulateMap();
     }
+
+    // Method that scans a list of every room to see if a vertex is contained within that room.
+    // If a match is found, the room dimensions/coordinates are returned in the form of RectInt object.
     public RectInt FindRoom(Vertex vertex)
     {
         foreach (RectInt room in rooms)
@@ -90,26 +106,19 @@ public class ProceduralMapGenerator : MonoBehaviour
         }
         return new RectInt(0, 0, 0, 0);
     }
+    // Method to locate the pair of vertices with the longest length between them.
+    // Runs a breadth-first serach algorithm twice.
     void FindGraphDiameter()
     {
         Vertex temp1 = BreadthFirstSearch(null);
         Vertex temp2 = BreadthFirstSearch(temp1);
-        //if (FindRoom(temp1).size.x * FindRoom(temp1).size.y < FindRoom(temp2).size.x * FindRoom(temp2).size.y)
-        //{
-            start = temp1;
-            end = temp2;
-        //}
-        //else
-        //{
-        //    start = temp2;
-        //    end = temp1;
-        //}
-        //Debug.Log("Start/End x: " + start.x + " y: " + start.y);
-        //Debug.Log("Start/End x: " + end.x + " y: " + end.y);
+        start = temp1;
+        end = temp2;
+  
     }
+    // Breadth first search method that returns the vertex that's the furthest from the input vertex.
     Vertex BreadthFirstSearch(Vertex newSource)
     {
-
         Queue<Vertex> q = new Queue<Vertex>();
         List<Vertex> visited = new List<Vertex>();
         distances = new Dictionary<Vertex, int>();
@@ -128,9 +137,7 @@ public class ProceduralMapGenerator : MonoBehaviour
 
         while (q.Count != 0)
         {
-            Debug.Log("we w");
             Vertex v = q.Peek();
-            //Debug.Log("Start/End peek v " + v.x + " " + v.y);
             foreach (Edge neighborEdge in mstEdges)
             {
                 Vertex v0 = mesh.vertices[neighborEdge.P0];
@@ -173,23 +180,22 @@ public class ProceduralMapGenerator : MonoBehaviour
             }
         }
         return source;
-        //ds.printSet(rooms.Count, mstEdges, mesh);
     }
+    // Places tiles on the world-space wherever there is a 1 on the binary matrix/2-D array.
     void paintGrid()
     {
         for (int x = 0; x < this.mapWidth; x++)
         {
             for (int y = 0; y < this.mapHeight; y++)
             {
-                if (hallwaysT[x, y] == 1 || level[x, y] == 1 || hallways[x, y] == 1)//level[x,y]==1||hallways[x, y] == 1 ||
+                if (hallwaysT[x, y] == 1 || level[x, y] == 1 || hallways[x, y] == 1)
                 {
                     dungeonGrid.SetTile(new Vector3Int(x, y, 0), this.dungeon);
-                    //minimapGrid.SetTile(new Vector3Int(x, y, 0), this.dungeon);
                 }
             }
         }
     }
-
+    // Kruskal's Algorithm for finding an MST
     void FindMST()
     {
         if (mesh != null)
@@ -200,20 +206,18 @@ public class ProceduralMapGenerator : MonoBehaviour
             {
                 Vertex v0 = mesh.vertices[edge.P0];
                 Vertex v1 = mesh.vertices[edge.P1];
-                Vector3 p0 = new Vector3((float)v0.x, (float)v0.y, 0.0f);
-                Vector3 p1 = new Vector3((float)v1.x, (float)v1.y, 0.0f);
                 edges.Add(edge);
                 weights.Add(Mathf.Sqrt((((float)v0.x - (float)v1.x) * ((float)v0.x - (float)v1.x)) + (((float)v0.y - (float)v1.y) * ((float)v0.y - (float)v1.y))));
             }
-            float[] weightsArr = weights.ToArray();
-            Edge[] edgesArr = edges.ToArray();
-            System.Array.Sort(weightsArr, edgesArr);
+            weightsArrSorted = weights.ToArray();
+            edgesArrSorted = edges.ToArray();
+            System.Array.Sort(weightsArrSorted, edgesArrSorted);
             this.vertices = new HashSet<Vertex>();
-            for (int i = 0; i < weightsArr.Length; i++)
+            for (int i = 0; i < weightsArrSorted.Length; i++)
             {
-                Vertex v0 = mesh.vertices[edgesArr[i].P0];
-                Vertex v1 = mesh.vertices[edgesArr[i].P1];
-                Debug.Log(weightsArr[i] + "- x0: " + (float)v0.x + " y0: " + (float)v0.y + " x1: " + (float)v1.x + " y1: " + (float)v1.y);
+                Vertex v0 = mesh.vertices[edgesArrSorted[i].P0];
+                Vertex v1 = mesh.vertices[edgesArrSorted[i].P1];
+                Debug.Log(weightsArrSorted[i] + "- x0: " + (float)v0.x + " y0: " + (float)v0.y + " x1: " + (float)v1.x + " y1: " + (float)v1.y);
                 this.vertices.Add(v0);
                 this.vertices.Add(v1);
             }
@@ -222,15 +226,15 @@ public class ProceduralMapGenerator : MonoBehaviour
 
             ds = new DisjointSet();
             ds.MakeSet(this.vertices);
-            int index = 0;
+            indexMaxMSTWeight = 0;
             while (mstEdges.Count != rooms.Count - 1)
             {
-                Edge nextEdge = edgesArr[index];
+                Edge nextEdge = edgesArrSorted[indexMaxMSTWeight];
 
                 Vertex x = ds.Find(mesh.vertices[nextEdge.P0]);
                 Vertex y = ds.Find(mesh.vertices[nextEdge.P1]);
-                Debug.Log(weightsArr[index] + " - MST - x0: " + (float)x.x + " y0: " + (float)x.y + " x1: " + (float)y.x + " y1: " + (float)y.y);
-                index++;
+                Debug.Log(weightsArrSorted[indexMaxMSTWeight] + " - MST - x0: " + (float)x.x + " y0: " + (float)x.y + " x1: " + (float)y.x + " y1: " + (float)y.y);
+                indexMaxMSTWeight++;
 
                 if (x != y)
                 {
@@ -238,58 +242,61 @@ public class ProceduralMapGenerator : MonoBehaviour
                     ds.Union(x, y);
                 }
             }
-            FindGraphDiameter();
-            deluanayEdges = new List<Edge>();
-            allEdges = new List<Edge>(mstEdges);
-            for (int i = 0; i < Mathf.Min(index + maxWeightShortcut, edgesArr.Length); i++)
-            {
-                if (!allEdges.Contains(edgesArr[i]))
-                {
-                    bool triangle = false;
-                    bool startEnd = false;
-                    foreach (Edge edge1 in allEdges)
-                    {
-                        foreach (Edge edge2 in allEdges)
-                        {
-                            if (!edge1.Equals(edge2))
-                            {
-                                HashSet<Vertex> hash = new HashSet<Vertex>();
-                                hash.Add(mesh.vertices[edge1.P0]);
-                                hash.Add(mesh.vertices[edge1.P1]);
-                                hash.Add(mesh.vertices[edge2.P0]);
-                                hash.Add(mesh.vertices[edge2.P1]);
-                                hash.Add(mesh.vertices[edgesArr[i].P0]);
-                                hash.Add(mesh.vertices[edgesArr[i].P1]);
-                                if (hash.Count == 3)
-                                {
-                                    triangle = true;
-                                }
-                                hash = new HashSet<Vertex>();
-                            }
-                        }
-                    }
-                    if (mesh.vertices[edgesArr[i].P0].Equals(start)
-                        || mesh.vertices[edgesArr[i].P0].Equals(end)
-                        || mesh.vertices[edgesArr[i].P1].Equals(start)
-                        || mesh.vertices[edgesArr[i].P1].Equals(end))
-                    {
-                        Debug.Log("Start/End: flag is true");
-                        startEnd = true;
-                    }
-                    if (Random.Range(0, 100) < shortcutChance && !triangle && !startEnd)
-                    {
-                        allEdges.Add(edgesArr[i]);
-                        deluanayEdges.Add(edgesArr[i]);
-                    }
-                }
-            }
-
-
         }
-
     }
 
-    TriangleNet.Mesh DeluanayTriangulation()
+    // Finds and selects viable unused Delaunay edge candidates to be reincorporated into the MST.
+    void FilterDelaunayCandidates()
+    {
+        
+        delaunayEdges = new List<Edge>();
+        allEdges = new List<Edge>(mstEdges);
+        for (int i = 0; i < Mathf.Min(indexMaxMSTWeight + maxWeightShortcut, edgesArrSorted.Length); i++)
+        {
+            if (!allEdges.Contains(edgesArrSorted[i]))
+            {
+                bool triangle = false;
+                bool startEnd = false;
+                foreach (Edge edge1 in allEdges)
+                {
+                    foreach (Edge edge2 in allEdges)
+                    {
+                        if (!edge1.Equals(edge2))
+                        {
+                            HashSet<Vertex> hash = new HashSet<Vertex>();
+                            hash.Add(mesh.vertices[edge1.P0]);
+                            hash.Add(mesh.vertices[edge1.P1]);
+                            hash.Add(mesh.vertices[edge2.P0]);
+                            hash.Add(mesh.vertices[edge2.P1]);
+                            hash.Add(mesh.vertices[edgesArrSorted[i].P0]);
+                            hash.Add(mesh.vertices[edgesArrSorted[i].P1]);
+                            if (hash.Count == 3)
+                            {
+                                triangle = true;
+                            }
+                            hash = new HashSet<Vertex>();
+                        }
+                    }
+                }
+                if (mesh.vertices[edgesArrSorted[i].P0].Equals(start)
+                    || mesh.vertices[edgesArrSorted[i].P0].Equals(end)
+                    || mesh.vertices[edgesArrSorted[i].P1].Equals(start)
+                    || mesh.vertices[edgesArrSorted[i].P1].Equals(end))
+                {
+                    Debug.Log("Start/End: flag is true");
+                    startEnd = true;
+                }
+                if (Random.Range(0, 100) < shortcutChance && !triangle && !startEnd)
+                {
+                    allEdges.Add(edgesArrSorted[i]);
+                    delaunayEdges.Add(edgesArrSorted[i]);
+                }
+            }
+        }
+    }
+
+    // Method using the built in Triangle.Net Dwyer's DelaunayTriangulation algorithm.
+    TriangleNet.Mesh DelaunayTriangulation()
     {
         Polygon polygon = new Polygon();
         for (int i = 0; i < rooms.Count; i++)
@@ -305,12 +312,10 @@ public class ProceduralMapGenerator : MonoBehaviour
         return (TriangleNet.Mesh)polygon.Triangulate(options);
     }
 
+    // Creates a binary tree node that stores information for the binary seperation algorithm.
     int[,] generateBSP(int mapWidth, int mapHeight)
     {
-
-        //level.Add(new Vector2Int(0, 0));
         level = new int[mapWidth + offSetBorder * 3, mapHeight + offSetBorder * 3];
-        //level = new int[220, 220];
         leafs = new List<Leaf>();
 
         Leaf root = new Leaf(0, 0, mapWidth, mapHeight);
@@ -338,12 +343,31 @@ public class ProceduralMapGenerator : MonoBehaviour
                 }
             }
         }
+        bspDebug = new Dictionary<Vector3, Vector3>();
+        bspDebug.Add(new Vector3(0, 0), new Vector3(0, 0 + mapHeight));
+        bspDebug.Add(new Vector3(0, 0 + mapHeight), new Vector3(0 + mapWidth, 0 + mapHeight));
+        bspDebug.Add(new Vector3(0 + mapWidth, 0 + mapHeight), new Vector3(0 + mapWidth, 0));
+        bspDebug.Add(new Vector3(0 + mapWidth, 0), new Vector3(0, 0));
         root.CreateRooms(this);
+        foreach (Leaf leaf in leafs)
+        {
+            try
+            {
+                bspDebug.Add(leaf.split0, leaf.split1);
+            } catch
+            {
+                bspDebug[leaf.split0] = leaf.split1;
+            }
+            
 
+        }
+        bspDebug[new Vector3(0, 0)] = new Vector3(0, 0 + mapHeight);
+        bspDebug[new Vector3(0 + mapWidth, 0)] = new Vector3(0, 0);
         return this.level;
 
 
     }
+    // Method that stores the room coordinates in each leaf on a 2-D array.
     public void CreateRoom(RectInt room)
     {
         this.rooms.Add(room);
@@ -356,6 +380,8 @@ public class ProceduralMapGenerator : MonoBehaviour
         }
     }
 
+    // Method/algorithm that determiens what type of hallway should be generated between the two rooms
+    // Determines wheter a vertical hallway, horizontal hallway or an L-shaped hallway (horizontal and vertical) is most suitable.
     void createHallways(int mapWidth, int mapHeight, List<Edge> edges)
     {
         tEdges = new List<Edge>();
@@ -393,7 +419,7 @@ public class ProceduralMapGenerator : MonoBehaviour
             }
             else if (xMid <= room1.xMax - 3 && xMid <= room2.xMax - 3 && xMid >= room1.xMin + 2 && xMid >= room2.xMin + 2)
             {
-                CreateVirTunnel(Mathf.Min(room1.yMax, room2.yMax), Mathf.Max(room1.yMin, room2.yMin), xMid, room1, room2);
+                CreateVerTunnel(Mathf.Min(room1.yMax, room2.yMax), Mathf.Max(room1.yMin, room2.yMin), xMid, room1, room2);
             }
             else
             {
@@ -429,7 +455,7 @@ public class ProceduralMapGenerator : MonoBehaviour
 
 
     }
-
+    // Creates a horizontal hallway between two sets of coordinates with the same y value.
     private void CreateHorTunnel(int x1, int x2, int y, RectInt room1, RectInt room2)
     {
         for (int x = Mathf.Min(x1, x2); x <= Mathf.Max(x1, x2); x++)
@@ -442,7 +468,9 @@ public class ProceduralMapGenerator : MonoBehaviour
 
 
     }
-    public void CreateVirTunnel(int y1, int y2, int x, RectInt room1, RectInt room2)
+
+    // Creates a vertical hallway between two sets of coordinates with the same x value.
+    public void CreateVerTunnel(int y1, int y2, int x, RectInt room1, RectInt room2)
     {
         for (int y = Mathf.Min(y1, y2); y <= Mathf.Max(y1, y2); y++)
         {
@@ -454,11 +482,40 @@ public class ProceduralMapGenerator : MonoBehaviour
 
     }
 
+    // Determine how to place L shaped hallways (multiple overlapping L shaped hallways makes a T shape, hence the "T" in "CreatTTunnel")
+    // Needs refactoring or an algorithm change as it does not always generate appropriate hallways
+    // TODO:
+    // Refactor,
+    // or
+    // replace with A* algorithm
     private void CreateTTunnel(int x1, int x2, int y1, int y2, RectInt room1, RectInt room2)
     {
-
         int yMid = y2;
         int xMid = x1;
+        // yMid/xMid dtermines which orientation the L hallway ("H") will go when connecting rooms A <-> B without hitting room C
+        // What this methods aims to do with this spaghetti code (avoid room C):
+        //  .   .   .   .   .   .   B   B   B
+        //  .   H   H   H   H   H   B   B   B
+        //  .   H   .   .   .   .   B   B   B
+        //  .   H   .   .   .   .   .   .   .
+        //  .   H   .   .   .   .   .   .   .
+        //  .   H   .   .   .   .   .   .   .
+        //  .   H   .   .   .   .   .   .   .
+        //  A   A   A   .   .   .   C   C   C
+        //  A   A   A   .   .   .   C   C   C
+        //  A   A   A   .   .   .   C   C   C
+        //
+        // Instead of this (going through room C):
+        //  .   .   .   .   .   .   B   B   B
+        //  .   .   .   .   .   .   B   B   B
+        //  .   .   .   .   .   .   .   H   .
+        //  .   .   .   .   .   .   .   H   .
+        //  .   .   .   .   .   .   .   H   .
+        //  .   .   .   .   .   .   .   H   .
+        //  A   A   A   .   .   .   C   H   C
+        //  A   A   A   H   H   H   H   H   C
+        //  A   A   A   .   .   .   C   C   C
+
         if ((room2.yMin < room1.yMax && room1.yMax < room2.yMax))
         {
             yMid = y1;
@@ -529,7 +586,6 @@ public class ProceduralMapGenerator : MonoBehaviour
 
         for (int x = Mathf.Min(x1, x2) - 2; x <= Mathf.Max(x1, x2) + 1; x++)
         {
-
             if (!(this.hallways[x, yMid - 3] == 1 || this.hallways[x, yMid - 2] == 1 || this.hallways[x, yMid - 1] == 1 || this.hallways[x, yMid] == 1 || this.hallways[x, yMid + 1] == 1 || this.hallways[x, yMid + 2] == 1))
             {
                 this.hallwaysT[x, yMid - 2] = 1;
@@ -564,6 +620,7 @@ public class ProceduralMapGenerator : MonoBehaviour
             }
             else
             {
+                // Depcrated method to remove excess hallways
                 //if (x < (Mathf.Max(x1, x2) - 2) && this.hallways[x, yMid - 2] == 1)
                 //{
                 //    this.hallwaysT[x, yMid - 2] = 0;
@@ -610,6 +667,7 @@ public class ProceduralMapGenerator : MonoBehaviour
             }
             else
             {
+                // Depcrated method to remove excess hallways
                 //if (y < (Mathf.Max(y1, y2) - 2) && this.hallways[xMid - 2, y] == 1)
                 //{
                 //    this.hallwaysT[xMid - 2, y] = 0;
@@ -618,15 +676,13 @@ public class ProceduralMapGenerator : MonoBehaviour
                 //    this.hallwaysT[xMid + 1, y] = 0;
                 //}
             }
-
         }
-        yMid = y2;
-        xMid = x1;
     }
 
+    // Displays debug graph/edges on the editor each frame if boolean variables are set to true.
     void Update()
     {
-        if (drawDeluanay)
+        if (drawDelaunay)
         {
             DrawDebugGraph(this.meshEdges, Color.red);
         }
@@ -634,12 +690,17 @@ public class ProceduralMapGenerator : MonoBehaviour
         {
             DrawDebugGraph(this.mstEdges, Color.green);
         }
-        if (drawDeluanayShortcuts)
+        if (drawDelaunayShortcuts)
         {
-            DrawDebugGraph(this.deluanayEdges, Color.blue);
+            DrawDebugGraph(this.delaunayEdges, Color.blue);
+        }
+        if (drawBSP)
+        {
+            DrawDebugGraph(this.bspDebug, Color.yellow);
         }
     }
 
+    // Method draws graph edges on the Scene view in the editor.
     void DrawDebugGraph(List<Edge> edges, Color color)
     {
         if (mesh != null)
@@ -654,11 +715,23 @@ public class ProceduralMapGenerator : MonoBehaviour
             }
         }
     }
+    // Alternate method that draws graph edges on the Scene view in the editor (with different parameters).
+    void DrawDebugGraph(Dictionary<Vector3, Vector3> vectorEdges, Color color)
+    {
+            foreach (KeyValuePair<Vector3, Vector3> edge in vectorEdges)
+            {
+                Debug.DrawLine(edge.Key, edge.Value, color, Time.deltaTime, false);
+            }
+    }
 
+    // Class structure that enables union/adds and finding vertices to be used with Kruskal's MST algorithm.
+    // Similar in structure to a linked list.
     class DisjointSet
     {
+        // Dictionary enables us to sstablish parent -> child relationships for each vertex.
         Dictionary<Vertex, Vertex> parent = new Dictionary<Vertex, Vertex>();
-        int[] dist;
+
+        // Add each vertex to its own disjoint set where none of them are connected to each other.
         public void MakeSet(HashSet<Vertex> vertices)
         {
             foreach (Vertex vertex in vertices)
@@ -667,6 +740,7 @@ public class ProceduralMapGenerator : MonoBehaviour
             }
         }
 
+        // Find the immediate parent/neighbor of the vertex.
         public Vertex Find(Vertex k)
         {
             if (parent[k] == k)
@@ -676,6 +750,7 @@ public class ProceduralMapGenerator : MonoBehaviour
             return Find(parent[k]);
         }
 
+        // Combine two disjoint sets
         public void Union(Vertex a, Vertex b)
         {
             Vertex x = Find(a);
@@ -691,8 +766,10 @@ public class ProceduralMapGenerator : MonoBehaviour
         }
     }
 
+    // Leaf structure class to assist with Binary Seperation Algorithm for a rectangular shape in 2D space
     public class Leaf
     {
+        // Variables that affect leaf sizes
         public int x;
         public int y;
         public int width;
@@ -701,9 +778,13 @@ public class ProceduralMapGenerator : MonoBehaviour
         public Leaf child2;
         public int min_width = 15;
         public int min_height = 12;
+        public Vector3 split0;
+        public Vector3 split1;
+        //public Dictionary<Vector3, Vector3> bspEdges;
 
         private RectInt room;
 
+        // Create leaf at position (x, y) with a set width/height
         public Leaf(int x, int y, int width, int height)
         {
             this.x = x;
@@ -713,6 +794,8 @@ public class ProceduralMapGenerator : MonoBehaviour
             this.room = new RectInt(0, 0, 0, 0);
         }
 
+        // Method that either bisects a leaf vertically or horizontally as long as the leaf's size is above a minimum threshold.
+        // Returns true if the bisection was succesful, returns false if the bisection was unsuccessful.
         public bool SplitLeaf()
         {
             if (child1 != null || child2 != null)
@@ -726,14 +809,16 @@ public class ProceduralMapGenerator : MonoBehaviour
                 splitHor = false;
             }
 
-            if (this.width > this.height)
-            {
-                splitHor = false;
-            }
-            else if (this.height > this.width)
-            {
-                splitHor = true;
-            }
+            // Deprecated constraint that creates more square-ish rooms than rectangular ones.
+
+            //if (this.width > this.height)
+            //{
+            //    splitHor = false;
+            //}
+            //else if (this.height > this.width)
+            //{
+            //    splitHor = true;
+            //}
 
             int max;
 
@@ -760,19 +845,22 @@ public class ProceduralMapGenerator : MonoBehaviour
             {
                 split = Mathf.RoundToInt(Random.Range(this.min_height, Mathf.RoundToInt(max * 0.75f)));
                 this.child1 = new Leaf(this.x, this.y, this.width - 1, split - 1);
-
+                split0 = new Vector3(x, y + split);
+                split1 = new Vector3(x + this.width + 2, y + split);
                 this.child2 = new Leaf(this.x, this.y + split, this.width - 1, this.height - split - 1);
             }
             else
             {
                 split = Mathf.RoundToInt(Random.Range(this.min_width, max));
-                this.child1 = new Leaf(this.x, this.y, split, this.height - 1);
-
-                this.child2 = new Leaf(this.x + split, this.y, this.width - split, this.height - 1);
+                this.child1 = new Leaf(this.x, this.y, split -1, this.height - 1);
+                split0 = new Vector3(x + split, y);
+                split1 = new Vector3(x + split, y + this.height + 2);
+                this.child2 = new Leaf(this.x + split, this.y, this.width - split - 1, this.height - 1);
             }
             return true;
         }
 
+        // Method that creates a rectangular room within the leaf.
         public void CreateRooms(ProceduralMapGenerator bspTree)
         {
             if (child1 != null || child2 != null)
@@ -799,6 +887,7 @@ public class ProceduralMapGenerator : MonoBehaviour
             }
         }
 
+        // Method that returns the room at each leaf by traversing the binary tree recursively.
         RectInt GetRoom()
         {
             if (!room.Equals(new RectInt(0, 0, 0, 0)))

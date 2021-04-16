@@ -2,27 +2,29 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+// Sound Manager for music only
 public class MusicSoundManager : MonoBehaviour
 {
+    // Variables to store all the sound effects that will be used.
     public static AudioClip dungeonMusic, gameOver, bossMusic, menuMusic, victoryMusic;
     public static AudioSource audioSrc;
     public static float secondsToFadeOut = 1f;
     public float maxVolume;
 
+    // Initialize volume level on Scene load (Menu -> Game).
     private void Awake()
     {
         try
         {
             maxVolume = MainMenu.volume;
-            //MainMenu menu = GameObject.FindGameObjectWithTag("Settings").GetComponent<MainMenu>();
-            //maxVolume = menu.volume;
-
         }
         catch
         {
             maxVolume = 1f;
         }
     }
+
+    // Initializing all the music before the first frame is called.
     void Start()
     {
         dungeonMusic = Resources.Load<AudioClip>("Sounds/Music/DungeonMusic");
@@ -39,6 +41,8 @@ public class MusicSoundManager : MonoBehaviour
         audioSrc.Play();
 
     }
+
+    // Switch case method to play the right music when called upon from other classes.
     public void ChangeMusic(string music)
     {
         switch (music)
@@ -61,11 +65,11 @@ public class MusicSoundManager : MonoBehaviour
           
         }
     }
+
+    // Async method to fade out old music and fade in the new music across multiple frames.
     IEnumerator FadeMusicTransition(AudioClip music, bool instant)
     {
-        
-
-        // Check Music Volume and Fade Out
+        // Checks music volume and fades volume to 0 either gradually or instantly (depending on instant boolean).
         while (audioSrc.volume > 0.01f)
         {
             if (instant)
@@ -75,16 +79,16 @@ public class MusicSoundManager : MonoBehaviour
             {
                 audioSrc.volume -= Time.unscaledDeltaTime / (maxVolume * secondsToFadeOut);
             }
-            
             yield return null;
         }
 
-        // Make sure volume is set to 0
+        // Set volume to 0 (in the event that 0 < volume < 0.01f).
         audioSrc.volume = 0;
 
-        // Stop Music
+        // Stop current track.
         audioSrc.Stop();
 
+        // Change to new track and make it loop, play then slowly fade in (independent of physics status with unscaledDeltaTime).
         audioSrc.clip = music;
         audioSrc.loop = true;
         audioSrc.Play();

@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-// An generic enum class that is used to identify the enemies states (a state machine)
+// A generic enum class that is used to identify the enemy's current state (a state machine)
 public enum EnemyState
 {
     walk,
@@ -11,8 +11,8 @@ public enum EnemyState
     stunned
 }
 
-// An inheritable class that contains most of the generic variables for different types of enemies.
-// Most of the methods from SkeletonAI/SkeletraxAi should be moved to this class (to make scaling/adding more enemies easier).
+// An inheritable class that contains most of the generic variables for different types of enemies
+// Most of the methods from SkeletonAI/SkeletraxAi should be moved to this class (to make scaling/adding more enemies easier)
 public class Enemy : MonoBehaviour
 {
     public EnemyState currentState;
@@ -41,6 +41,7 @@ public class Enemy : MonoBehaviour
     public SpriteRenderer mySprite;
 
   
+    // Inheritable methods that aren't found in MonoBehavior
     private void Idle()
     {
 

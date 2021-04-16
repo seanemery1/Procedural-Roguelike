@@ -268,8 +268,8 @@ PolygonCollider2D:
   m_AutoTiling: 0
   m_Points:
     m_Paths:
-    - - {x: 0.5, y: 0}
-      - {x: -0.5, y: 0}
+    - - {x: 0.5, y: -1.5}
+      - {x: -0.5, y: -1.5}
       - {x: -1.6, y: -8}
       - {x: 1.6, y: -8}
 --- !u!1 &8285493944943404842
@@ -828,6 +828,11 @@ MonoBehaviour:
   isWalk: 0
   isAttack: 0
   isStunned: 0
+  flashColor: {r: 1, g: 0.2679245, b: 0.2679245, a: 0.5882353}
+  regularColor: {r: 1, g: 1, b: 1, a: 1}
+  flashDuration: 0.08
+  numberOfFlashes: 3
+  mySprite: {fileID: 0}
   animator: {fileID: 0}
   target: {fileID: 0}
   playerTrigger: {fileID: 8285493944897986548}
@@ -835,11 +840,6 @@ MonoBehaviour:
   horizontal: 0
   vertical: 0
   playerPosition: {x: 0, y: 0}
-  flashColor: {r: 1, g: 0.2679245, b: 0.2679245, a: 0.5882353}
-  regularColor: {r: 1, g: 1, b: 1, a: 1}
-  flashDuration: 0.08
-  numberOfFlashes: 3
-  mySprite: {fileID: 0}
 --- !u!114 &8285493945796763950
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -880,7 +880,7 @@ MonoBehaviour:
   - {x: 1, y: -1, z: 0}
   m_ShapePathHash: 0
   m_Mesh: {fileID: 0}
-  m_InstanceId: 27688
+  m_InstanceId: 46608
 --- !u!114 &8285493945796763948
 MonoBehaviour:
   m_ObjectHideFlags: 0

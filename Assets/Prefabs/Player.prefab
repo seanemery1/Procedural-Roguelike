@@ -290,7 +290,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2502501708979105983}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 3, y: 7.67, z: 0}
+  m_LocalPosition: {x: 9.5, y: 68, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 5534539257264522896}
@@ -374,6 +374,13 @@ MonoBehaviour:
   disableMovement: 0
   animator: {fileID: 1288875853455718933}
   rb: {fileID: 0}
+  playerStats: {fileID: 0}
+  playerCombat: {fileID: 0}
+  flashColor: {r: 0, g: 0, b: 0, a: 0}
+  regularColor: {r: 0, g: 0, b: 0, a: 0}
+  flashDuration: 0
+  numberOfFlashes: 0
+  mySprite: {fileID: 0}
 --- !u!114 &1773134803297853401
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -526,6 +533,7 @@ MonoBehaviour:
   halfHeart: {fileID: 82707731993968007, guid: 74ca0260f5baaf245affdad8f3227779, type: 3}
   emptyHeart: {fileID: 1080825480604336155, guid: 74ca0260f5baaf245affdad8f3227779,
     type: 3}
+  numsOfKeysText: {fileID: 0}
   dmgImmunity: 0
   key: {fileID: 0}
   keySprite: {fileID: 0}

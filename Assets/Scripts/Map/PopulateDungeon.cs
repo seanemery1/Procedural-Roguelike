@@ -5,8 +5,10 @@ using TriangleNet.Topology;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
+// Populates the dungeon map after it has been generated
 public class PopulateDungeon : MonoBehaviour
 {
+    // Declaring/initializing all the various map elements that will be placed procedurally
     public GameObject player;
     public GameObject skeletonHard;
     public GameObject skeleton;
@@ -19,16 +21,20 @@ public class PopulateDungeon : MonoBehaviour
     public Tilemap spikeGrid;
     ProceduralMapGenerator mapData;
 
+    // Miscalaneous variables used only by algorithms
     Dictionary<Vertex, int> distances;
     HashSet<Vertex> vertices;
     int[] distancesArr;
     Vertex[] verticesArr;
 
+    // Initialzing some variables and calling various methods
     public void PopulateMap()
     {
         mapData = GetComponent<ProceduralMapGenerator>();
         distances = mapData.distances;
         vertices = mapData.vertices;
+
+        // Populates the dungeon with each item at a time.
         OrientMap();
         SpawnPlayer();
         SpawnSkeletons();
@@ -37,23 +43,30 @@ public class PopulateDungeon : MonoBehaviour
         SpawnHealth();
         SpawnSpikes();
     }
-    //roomBounds.xMin + 2, roomBounds.xMax - 2), Random.Range(roomBounds.yMin + 2, roomBounds.yMax - 4)
+
+    // Spikes have a chance on spawning in every room (except for the starting room)
     void SpawnSpikes()
     {
+        // For each vertex/room
         foreach (Vertex vertex in vertices)
         {
             RectInt tempRoom = mapData.FindRoom(vertex);
             bool bossRoom = tempRoom.Equals(mapData.FindRoom(mapData.end));
+
+            // If not the starting room where the player spawns
             if (!tempRoom.Equals(mapData.FindRoom(mapData.start)))
             {
+                // Double for loop to loop through each tile in a room
                 for (int x = tempRoom.xMin + 1; x <= tempRoom.xMax - 1; x++)
                 {
                     for (int y = tempRoom.yMin + 2; y <= tempRoom.yMax - 3; y++)
                     {
                         if (bossRoom)
                         {
+                            // If inside a boss room, do not spawn spikes if it is too close to the center (where the boss will spawn)
                             if (!(x <= tempRoom.center.x + 2 && x >= tempRoom.center.x - 2 && y <= tempRoom.center.y + 2 && y >= tempRoom.center.y - 2))
                             {
+                                // 3% chance of having a spike spawn on a tile
                                 if (Random.Range(0, 100) < 3)
                                 {
                                     spikeGrid.SetTile(new Vector3Int(x, y, 0), spike);
@@ -61,6 +74,7 @@ public class PopulateDungeon : MonoBehaviour
                             }
                         } else
                         {
+                            // 2% chance of having a spike spawn on a tile
                             if (Random.Range(0, 100) < 2)
                             {
                                 spikeGrid.SetTile(new Vector3Int(x, y, 0), spike);
@@ -73,14 +87,18 @@ public class PopulateDungeon : MonoBehaviour
             
         }
     }
+
+    // Health/one heart has an increasing chance of spawning the closer we get to the boss room (the further away we get from the spawn/start room)
     void SpawnHealth()
     {
+        // For each room
         for(int i = 0; i < distancesArr.Length; i++)
         {
             RectInt roomBounds = mapData.FindRoom(verticesArr[i]);
-            if (!roomBounds.Equals(mapData.end))
+            // If the room is not a boss room, there is a chance to spawn a heart piece
+            if (!roomBounds.Equals(mapData.FindRoom(mapData.end)))
             {
-                if (Random.Range(0,9)< distancesArr[i])
+                if (Random.Range(0,100) < 10)
                 {
                     Instantiate(health, new Vector3(Random.Range(roomBounds.xMin + 2, roomBounds.xMax - 2) + 0.125f, Random.Range(roomBounds.yMin + 2, roomBounds.yMax - 4) + 0.1875f), Quaternion.identity);
                 }
@@ -88,11 +106,15 @@ public class PopulateDungeon : MonoBehaviour
             }
         }
     }
+
+    // Spawn (aka teleport) player in the center of the starting room
     void SpawnPlayer()
     {
-        //Instantiate(player, new Vector3((float) mapData.start.x, (float) mapData.start.y, 0), Quaternion.identity);
         player.transform.position = new Vector3((float)mapData.start.x, (float)mapData.start.y, 0);
     }
+
+    // Method that produce a corresponding pair of lists that's sorted in order
+    // For example: distances[index] corresponds to the distance of vertex[index]
     void OrientMap()
     {
         //bool inverse = true;
@@ -111,6 +133,7 @@ public class PopulateDungeon : MonoBehaviour
             verticesList.Add(vertex);
             distancesList.Add(distances[vertex]);
         }
+        // Deprecated method to swap the spawn/boss room by comparing the two sizes (and making the spawn room the smallest one between the two)
         //if (inverse)
         //{
         //    int index = 0;
@@ -122,6 +145,8 @@ public class PopulateDungeon : MonoBehaviour
         //        index++;
         //    }
         //}
+
+        // Sorting both arrays by ascending distances
         verticesArr = verticesList.ToArray();
         distancesArr = distancesList.ToArray();
         System.Array.Sort(distancesArr, verticesArr);
@@ -130,30 +155,33 @@ public class PopulateDungeon : MonoBehaviour
             Debug.Log("Dist: " + distancesArr[i] + " Vert: " + verticesArr[i]);
         }
     }
+
+    // Method that spawns skeletons in each room in an almost linear fashing
     void SpawnSkeletons()
     {
+        // For each room
         RectInt roomBounds;
         foreach (Vertex vertex in vertices)
         {
             roomBounds = mapData.FindRoom(vertex);
-            //if (!mapData.FindRoom(vertex).Equals(mapData.start) )
-            //{
-                
+            // Attempt to spawn x skeletons where x is the distance/number of rooms awaay from spawn
             for (int i = 0; i < distances[vertex]; i++)
             {
+                // If boss room, spawn harder variants of the skeleton mob
                 if (mapData.FindRoom(vertex).Equals(mapData.FindRoom(mapData.end)))
                 {
                     Instantiate(skeletonHard, new Vector3(Random.Range(roomBounds.xMin + 2, roomBounds.xMax - 2), Random.Range(roomBounds.yMin + 2, roomBounds.yMax - 4)), Quaternion.identity);
                     Instantiate(skeletonHard, new Vector3(Random.Range(roomBounds.xMin + 2, roomBounds.xMax - 2), Random.Range(roomBounds.yMin + 2, roomBounds.yMax - 4)), Quaternion.identity);
-                    //Instantiate(skeletonHard, new Vector3(Random.Range(roomBounds.xMin + 2, roomBounds.xMax - 2), Random.Range(roomBounds.yMin + 2, roomBounds.yMax - 4)), Quaternion.identity);
 
                 } else
                 {
+                    // There is an 80% chance for each skeleton to spawn
                     if (Random.Range(0, 100) < 80)
                     {
                         Instantiate(skeleton, new Vector3(Random.Range(roomBounds.xMin + 2, roomBounds.xMax - 2), Random.Range(roomBounds.yMin + 2, roomBounds.yMax - 4)), Quaternion.identity);
                     }
-                    if (i < 3)
+                    // If it's one of the first 2 rooms away from spawn, guarantee one skeleton spawn
+                    if (i <= 2)
                     {
                         Instantiate(skeleton, new Vector3(Random.Range(roomBounds.xMin + 2, roomBounds.xMax - 2), Random.Range(roomBounds.yMin + 2, roomBounds.yMax - 4)), Quaternion.identity);
                     }
@@ -165,25 +193,24 @@ public class PopulateDungeon : MonoBehaviour
        
         }
     }
+
+    // Method spawns the final boss, Skeletrax in the center of the room furthest away from the spawn room
     void SpawnSkeletrax()
     {
         RectInt room = mapData.FindRoom(mapData.end);
         var boss = Instantiate(skeletrax, new Vector3(room.center.x, room.center.y), Quaternion.identity);
         boss.GetComponent<SkeletraxAI>().room = room;
     }
+
+    // Method that uses a pseudo-BFS algorithm to create solvable lock and key puzzles (in terms of dungeon navigation)
     void SpawnKeysAndDoors()
     {
-        Queue<Vertex> q = new Queue<Vertex>();
-        List<Vertex> visited = new List<Vertex>();
-        distances = new Dictionary<Vertex, int>();
         Vertex start = mapData.start;
         SpawnKey(mapData.FindRoom(start), 0f);
         SpawnDoors(start, verticesArr[1]);
         HashSet<Vertex> lockedRooms = new HashSet<Vertex>();
         HashSet<Vertex> keyRooms = new HashSet<Vertex>();
         keyRooms.Add(verticesArr[0]);
-        //lockedRooms.Add(verticesArr[1]);
-        
         bool endIsLocked = false;
         for (int i = 1; i < distancesArr.Length - 1; i++)
         {
@@ -221,72 +248,65 @@ public class PopulateDungeon : MonoBehaviour
                     }
                     if (doorHereRoom != null)
                     {
-                        if (verticesArr[i+1].Equals(mapData.end))
+                        bool bossPath = CheckIfPathContainsBoss(doorHereRoom, verticesArr[i]);
+                        if (bossPath)
                         {
-                            if (!endIsLocked)
+                            if(!endIsLocked)
                             {
-                                SpawnKey(mapData.FindRoom(verticesArr[i]), 0f);
-                                SpawnDoors(doorHereRoom, verticesArr[i + 1]);
-                                keyRooms.Add(verticesArr[i]);
-                                //lockedRooms.Add(verticesArr[i + 1]);
-                                endIsLocked = true;
-                            }
-                            
-                        }
-                        else if (verticesArr[i].Equals(mapData.end))
-                        {
-                            if (!endIsLocked)
-                            {
-                                SpawnKey(mapData.FindRoom(verticesArr[i + 1]), 0f);
+                                Vertex placeKeyHere = FurthestRoomBFS(doorHereRoom, verticesArr[i + 1]);
+                                SpawnKey(mapData.FindRoom(placeKeyHere), 0f);
                                 SpawnDoors(doorHereRoom, verticesArr[i]);
                                 keyRooms.Add(verticesArr[i + 1]);
-                                //lockedRooms.Add(verticesArr[i]);
-                                endIsLocked = true;
+
+                                if (verticesArr[i].Equals(mapData.end))
+                                {
+                                    endIsLocked = true;
+                                }
+                                else
+                                {
+                                    lockedRooms.Add(verticesArr[i]);
+                                }                        
                             }
-                            
-                        }
-                        else if (neighbors0.Count < neighbors1.Count)
+                        } else
                         {
-                            Debug.Log("Door: " + doorHereRoom.x + " " + doorHereRoom.y + " -> " + verticesArr[i + 1].x + " " + verticesArr[i + 1].y);
-                            Debug.Log("Key: " + doorHereRoom.x + " " + doorHereRoom.y + " -> " + verticesArr[i].x + " " + verticesArr[i].y);
-                            SpawnKey(mapData.FindRoom(verticesArr[i]), 0f);
-                            SpawnDoors(doorHereRoom, verticesArr[i + 1]);
-                            keyRooms.Add(verticesArr[i]);
-                            lockedRooms.Add(verticesArr[i + 1]);
-                        }
-                        else if (neighbors0.Count >= neighbors1.Count)
-                        {
-                            Debug.Log("Door: " + doorHereRoom.x + " " + doorHereRoom.y + " -> " + verticesArr[i].x + " " + verticesArr[i].y);
-                            Debug.Log("Key: " + doorHereRoom.x + " " + doorHereRoom.y + " -> " + verticesArr[i + 1].x + " " + verticesArr[i + 1].y);
-                            SpawnKey(mapData.FindRoom(verticesArr[i + 1]), 0f);
-                            SpawnDoors(doorHereRoom, verticesArr[i]);
-                            keyRooms.Add(verticesArr[i + 1]);
-                            lockedRooms.Add(verticesArr[i]);
-                        }
+                            if(!endIsLocked)
+                            {
+                                Vertex placeKeyHere = FurthestRoomBFS(doorHereRoom, verticesArr[i]);
+                                SpawnKey(mapData.FindRoom(placeKeyHere), 0f);
+                                SpawnDoors(doorHereRoom, verticesArr[i + 1]);
+                                keyRooms.Add(verticesArr[i]);
+                                if (verticesArr[i + 1].Equals(mapData.end))
+                                {
+                                    endIsLocked = true;
+                                } else
+                                {
+                                    lockedRooms.Add(verticesArr[i + 1]);
+                                }      
+                            }
+                        }  
                     }
-                    
+
                 }
             }
         }
         if (!endIsLocked)
         {
-            //SpawnKey(mapData.FindRoom(verticesArr[i + 1]), 0f);
             foreach (Edge edge in mapData.mstEdges)
             {
                 Vertex v0 = mapData.mesh.vertices[edge.P0];
                 Vertex v1 = mapData.mesh.vertices[edge.P1];
                 if (mapData.FindRoom(v0).Equals(mapData.FindRoom(mapData.end)) || mapData.FindRoom(v1).Equals(mapData.FindRoom(mapData.end)))
                 {
-                    if (v0.Equals(verticesArr[verticesArr.Length - 1]))
+                    if (mapData.FindRoom(v0).Equals(mapData.FindRoom(mapData.end)))
                     {
                         SpawnDoors(v1, v0);
-                       // lockedRooms.Add(v0);
-                    } else
+              
+                    }
+                    else
                     {
                         SpawnDoors(v0, v1);
-                        //lockedRooms.Add(v1);
                     }
-                    
+
                 }
             }
             bool extraKeyPlaced = false;
@@ -301,11 +321,145 @@ public class PopulateDungeon : MonoBehaviour
                         break;
                     }
                 }
-            }   
+            }
         }
 
     }
+    // Breadth-first search method that traverses the graph to locate the furthest room away.
+    // Method will place a key in that furthest room.
+    Vertex FurthestRoomBFS(Vertex splitRoom, Vertex keyPlacementContender)
+    {
+        Queue<Vertex> q = new Queue<Vertex>();
+        List<Vertex> visited = new List<Vertex>();
+        visited.Add(splitRoom);
+        Dictionary<Vertex, int> distances = new Dictionary<Vertex, int>();
+        Vertex source = keyPlacementContender;
+        foreach (Vertex vertex in vertices)
+        {
+            distances.Add(vertex, 0);
+            if (source == null)
+            {
+                source = vertex;
+            }
 
+        }
+        visited.Add(source);
+        q.Enqueue(source);
+
+        while (q.Count != 0)
+        {
+            Vertex v = q.Peek();
+            foreach (Edge neighborEdge in mapData.mstEdges)
+            {
+                Vertex v0 = mapData.mesh.vertices[neighborEdge.P0];
+                Vertex v1 = mapData.mesh.vertices[neighborEdge.P1];
+                if (v0.Equals(v) || v1.Equals(v))
+                {
+                    Vertex neighbor = null;
+                    if (!v0.Equals(v))
+                    {
+                        Debug.Log("Start/End v0");
+                        neighbor = v0;
+                    }
+                    else if (!v1.Equals(v))
+                    {
+                        Debug.Log("Start/End v1");
+                        neighbor = v1;
+                    }
+                    else
+                    {
+                    }
+                    if (!visited.Contains(neighbor))
+                    {
+                        q.Enqueue(neighbor);
+
+                        visited.Add(neighbor);
+                        distances[neighbor] = distances[v] + 1;
+                    }
+
+                }
+            }
+            q.Dequeue();
+        }
+        foreach (Vertex vertex in vertices)
+        {
+            if (distances[vertex] > distances[source])
+            {
+                Debug.Log("Start/End distance: " + distances[vertex]);
+                source = vertex;
+            }
+        }
+        return source;
+    }
+
+    // Breadth-first search method that traverses the graph to see if a boss room exists at the end of that branch.
+    bool CheckIfPathContainsBoss(Vertex splitRoom, Vertex roomToBoss)
+    {
+        Queue<Vertex> q = new Queue<Vertex>();
+        List<Vertex> visited = new List<Vertex>();
+        visited.Add(splitRoom);
+        Dictionary<Vertex, int> distances = new Dictionary<Vertex, int>();
+        Vertex source = roomToBoss;
+        foreach (Vertex vertex in vertices)
+        {
+            distances.Add(vertex, 0);
+            if (source == null)
+            {
+                source = vertex;
+            }
+
+        }
+        visited.Add(source);
+        q.Enqueue(source);
+
+        while (q.Count != 0)
+        {
+            Vertex v = q.Peek();
+            //Debug.Log("Start/End peek v " + v.x + " " + v.y);
+            foreach (Edge neighborEdge in mapData.mstEdges)
+            {
+                Vertex v0 = mapData.mesh.vertices[neighborEdge.P0];
+                Vertex v1 = mapData.mesh.vertices[neighborEdge.P1];
+                if (v0.Equals(v) || v1.Equals(v))
+                {
+                    Vertex neighbor = null;
+                    if (!v0.Equals(v))
+                    {
+                        Debug.Log("Start/End v0");
+                        neighbor = v0;
+                    }
+                    else if (!v1.Equals(v))
+                    {
+                        Debug.Log("Start/End v1");
+                        neighbor = v1;
+                    }
+                    else
+                    {
+                    }
+                    if (!visited.Contains(neighbor))
+                    {
+                        q.Enqueue(neighbor);
+
+                        visited.Add(neighbor);
+                        distances[neighbor] = distances[v] + 1;
+                    }
+
+                }
+            }
+            q.Dequeue();
+        }
+        foreach (Vertex vertex in visited)
+        {
+
+            if (mapData.FindRoom(vertex).Equals(mapData.FindRoom(mapData.end)))
+            {
+                return true;
+            }
+
+        }
+        return false;
+    }
+    // Method used to spawn doors between two rooms. Needs major refactoring.
     void SpawnDoors(Vertex placeDoorHere, Vertex nextRoom)
     {
         Debug.Log("Spawn doors: " + placeDoorHere.x + " " + placeDoorHere.y);
@@ -321,12 +475,10 @@ public class PopulateDungeon : MonoBehaviour
         int xMid = Mathf.RoundToInt((x1 + x2) / 2);
         int yMid = Mathf.RoundToInt((y1 + y2) / 2);
         Debug.Log("yMid: " + yMid + " y1Max " + room1.yMax + " y1Min" + room1.yMin + " y2Max " + room2.yMax + " y2Min" + room2.yMin);
-        //Debug.Log()
         if (yMid <= room1.yMax - 3 && yMid <= room2.yMax - 3 && yMid >= room1.yMin + 2 && yMid >= room2.yMin + 2)
         {
             if (x1 < x2)
             {
-                //for (int y = room1.yMin; y < room1)
                 SpawnRightDoor(room1.xMax, yMid);
             }
             else
@@ -334,9 +486,6 @@ public class PopulateDungeon : MonoBehaviour
                 SpawnLeftDoor(room1.xMin, yMid);
 
             }
-            //SpawnRight/Left
-            //CreateHorTunnel(Mathf.Min(room1.xMax, room2.xMax), Mathf.Max(room1.xMin, room2.xMin), yMid, room1, room2);
-
         }
         else if (xMid <= room1.xMax - 3 && xMid <= room2.xMax - 3 && xMid >= room1.xMin + 2 && xMid >= room2.xMin + 2)
         {
@@ -348,16 +497,13 @@ public class PopulateDungeon : MonoBehaviour
             {
                 SpawnBotDoor(xMid, room1.yMin);
             }
-
-            //CreateVirTunnel(Mathf.Min(room1.yMax, room2.yMax), Mathf.Max(room1.yMin, room2.yMin), xMid, room1, room2);
         }
         else
         {
-            Debug.Log("else");
-            Vector2 vector = new Vector2(room2.x - room1.x, room2.y - room1.y);
             float angle = Mathf.Atan2(room2.y - room1.y, room2.x - room1.x)*Mathf.Rad2Deg;
             Debug.Log("angle: " + angle);
             bool found = false;
+            // Checks which corner the door should be in. Needs refactoring.
             if (angle < 90f && angle >= 0f)
             {
                 if (!found)
@@ -568,33 +714,16 @@ public class PopulateDungeon : MonoBehaviour
                 }
                 // scan yMin and xMax;
             }
-            //look for hallway ts;
         }
-
     }
+    
+    // Instantiate a key around the room's center with a slight offset.
     void SpawnKey(RectInt roomBounds, float offset)
     {
         Instantiate(key, new Vector3(roomBounds.center.x + offset, roomBounds.center.y + 1.5f + offset), Quaternion.identity);
     }
-    //for (int x = 0; x< this.mapWidth; x++)
-    //    {
-    //        for (int y = 0; y< this.mapHeight; y++)
-    //        {
-    //            if (hallwaysT[x, y] == 1 || level[x, y] == 1 || hallways[x, y] == 1)//level[x,y]==1||hallways[x, y] == 1 ||
-    //            {
-    //                dungeonGrid.SetTile(new Vector3Int(x, y, 0), this.dungeon);
-    //                //minimapGrid.SetTile(new Vector3Int(x, y, 0), this.dungeon);
-    //                Debug.Log(x);
-    //            }
-    //        }
-    //    }
-    // hor
 
-    //        this.hallways[x, y + 1] = 1;
-    //        this.hallways[x, y] = 1;
-    //        this.hallways[x, y - 1] = 1;
-    //        this.hallways[x, y - 2] = 1;
-
+    // Spawn door tilesets with the correct offset in the appropriate configuration to make a right door at a hallway entrance.
     void SpawnRightDoor(int x, int y)
     {
         Debug.Log("Right door");
@@ -606,10 +735,8 @@ public class PopulateDungeon : MonoBehaviour
         doorGrid.SetTile(new Vector3Int(x + 1, y - 1, 0), door);
         //doorGrid.SetTile(new Vector3Int(x + 1, y , 0), door);
     }
-    // X
-    // X
-    // Y
-    // X
+
+    // Spawn door tilesets with the correct offset in the appropriate configuration to make a left door at a hallway entrance.
     void SpawnLeftDoor(int x, int y)
     {
         Debug.Log("Left door");
@@ -622,11 +749,7 @@ public class PopulateDungeon : MonoBehaviour
         //doorGrid.SetTile(new Vector3Int(x - 1, y, 0), door);
     }
 
-    // YXYY
-    //this.hallways[x - 2, y] = 1;
-    //this.hallways[x - 1, y] = 1;
-    //this.hallways[x, y] = 1;
-    //this.hallways[x + 1, y] = 1;
+    // Spawn door tilesets with the correct offset in the appropriate configuration to make a top door at a hallway entrance.
     void SpawnTopDoor(int x, int y)
     {
         Debug.Log("Top door");
@@ -639,6 +762,7 @@ public class PopulateDungeon : MonoBehaviour
         doorGrid.SetTile(new Vector3Int(x - 1, y, 0), door);
     }
 
+    // Spawn door tilesets with the correct offset in the appropriate configuration to make a bottom door at a hallway entrance.
     void SpawnBotDoor(int x, int y)
     {
         Debug.Log("Bot door");
@@ -650,8 +774,6 @@ public class PopulateDungeon : MonoBehaviour
         doorGrid.SetTile(new Vector3Int(x, y + 1, 0), door);
         doorGrid.SetTile(new Vector3Int(x - 1, y + 1, 0), door);
     }
-
 }
-    //ver
         
   

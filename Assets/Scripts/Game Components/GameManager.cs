@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using TMPro;
 
+// A generic enum class that is used to identify the game's current state (a state machine)
 public enum GameState
 {
     onGoing,
@@ -11,8 +12,11 @@ public enum GameState
     gameVictory,
     pause
 }
+
+// Game manager class to identify whether a game is paused/unpaused or if the player had achieved either victory (by killing the final boss) or were defeated (and so they get a game over screen)
 public class GameManager : MonoBehaviour
 {
+    // Initializing variables by grabbing UI components for each screen
     float transitionTime = 3f;
     public GameObject UI;
     public GameObject GameOverScreen;
@@ -22,8 +26,10 @@ public class GameManager : MonoBehaviour
     public TMP_Text seedInfo;
     GameState gameState;
   
+    // Getting seed info to display on pause menu and setting the game's state to onGoing (aka unpaused)
     private void Start()
     {
+        Physics2D.IgnoreLayerCollision(9, 10, false);
         seedInfo.text = "Seed: " + tileMap.GetComponent<Seed>().CurrentSeed;
         gameState = GameState.onGoing;
     }
@@ -54,6 +60,7 @@ public class GameManager : MonoBehaviour
         Time.timeScale = 0;
         UI.SetActive(false);
         GameOverScreen.SetActive(true);
+        Physics2D.IgnoreLayerCollision(9, 10, false);
         Debug.Log("gameover");
     }
     void GameVictory()
@@ -61,6 +68,7 @@ public class GameManager : MonoBehaviour
         Time.timeScale = 0;
         UI.SetActive(false);
         GameVictoryScreen.SetActive(true);
+        Physics2D.IgnoreLayerCollision(9, 10, false);
         Debug.Log("victory");
     }
     public void Update()
@@ -92,12 +100,14 @@ public class GameManager : MonoBehaviour
 
     }
     public void Quit() {
+        Physics2D.IgnoreLayerCollision(9, 10, false);
         MusicSoundManager.audioSrc.Stop();
         Time.timeScale = 1;
         SceneManager.LoadScene("Menu");
     }
     public void NewLevel()
     {
+        Physics2D.IgnoreLayerCollision(9, 10, false);
         Time.timeScale = 1;
         //.GameSeed = "Default";
         tileMap.GetComponent<Seed>().GameSeed = "Default";

@@ -14,9 +14,7 @@ public class Seed : MonoBehaviour
        try
         {
             GameSeed = MainMenu.seed;
-           //     = GameObject.FindGameObjectWithTag("Settings").GetComponent<MainMenu>();
-           //GameObject.FindGameObjectWithTag("Settings").GetComponent<MainMenu>().seed = "Default";
-           //GameSeed = menu.seed;
+            MainMenu.seed = "Default";
            
         } catch
         {

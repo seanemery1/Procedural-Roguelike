@@ -5,7 +5,7 @@ using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using TMPro;
 
-// Static class to hold player's settings on volume and seed.
+// Static class to hold player's volume and seed settings.
 public static class MainMenu
 {
     public static float volume = 1f;

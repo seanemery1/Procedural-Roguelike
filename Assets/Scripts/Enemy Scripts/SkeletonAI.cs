@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+// A class that dictates the enemy's AI (structured as a state machine)
 public class SkeletonAI : Enemy
 {
 
@@ -13,6 +14,7 @@ public class SkeletonAI : Enemy
     public float horizontal;
     public float vertical;
     public Vector2 playerPosition;
+    private int wallBump;
 
 
     // Initializing all the variables before the first frame is called.
@@ -124,6 +126,24 @@ public class SkeletonAI : Enemy
             isAttack = false;
         }
     }
+
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        //Debug.Log("Bump" + collision.collider.tag);
+        if (collision.collider.CompareTag("Wall"))
+        {
+            
+            wallBump++;
+            Debug.Log("wall" + wallBump);
+            isWalk = false;
+            isAttack = false;
+            moveSpeed = 150f;
+            waitTime = 1f;
+            animator.SetBool("isWalking", false);
+            currentState = EnemyState.idle;
+        }
+    }
+
     // If stunned, stop all animations and reduce the object's velocity to 0 for a specified delay.
     void Stunned()
     {
@@ -161,7 +181,7 @@ public class SkeletonAI : Enemy
             waitTime = 1f;
             animator.SetBool("isWalking", true);
             moveSpeed = 200f;
-            
+            wallBump = 0;
             horizontal = moveDirection.normalized.x;
             vertical = moveDirection.normalized.y;
             animator.SetFloat("Horizontal", horizontal);
@@ -174,6 +194,7 @@ public class SkeletonAI : Enemy
                 isAttack = false;
                 moveSpeed = 150f;
                 waitTime = 1f;
+                wallBump = 0;
                 currentState = EnemyState.idle;
             } else
             {
@@ -202,49 +223,78 @@ public class SkeletonAI : Enemy
     {
         if (waitTime <=0)
         {
-            waitTime = Random.Range(1f, 3f);
+            
             currentState = EnemyState.walk;
             animator.SetBool("isWalking", true);
             
             isIdle = false;
         } else
         {
+            animator.SetBool("isWalking", false);
             waitTime -= Time.deltaTime;
             return;
         }
         if (!isIdle)
         {
-            isIdle = true;
             
-            switch (Random.Range(0, 4))
+            isIdle = true;
+            if (wallBump==1)
             {
-                case 0:
-                    // up
-                    playerTrigger.transform.localEulerAngles = new Vector3(0f, 0f, 180f);
-                    vertical = 1;
-                    horizontal = 0;
-                    break;
-                case 1:
-                    // right
-                    playerTrigger.transform.localEulerAngles = new Vector3(0f, 0f, 90f);
-                    vertical = 0;
-                    horizontal = 1;
-                    break;
-                case 2:
-                    // down
-                    playerTrigger.transform.localEulerAngles = new Vector3(0f, 0f, 0f);
-                    vertical = -1;
-                    horizontal = 0;
-                    break;
-                case 3:
-                    // left
-                    playerTrigger.transform.localEulerAngles = new Vector3(0f, 0f, 270f);
-                    vertical = 0;
-                    horizontal = -1;
-                    break;
-                default:
-                    break;
+                waitTime = 0.5f;
+                vertical = -vertical;
+                horizontal = -horizontal;
+                playerTrigger.transform.Rotate(new Vector3(0, 0, 180f));
+            } else if (wallBump>1)
+            {
+                waitTime = 0.5f;
+                vertical = horizontal;
+                horizontal = vertical;
+                float rotation;
+                if (horizontal!=0)
+                {
+                    rotation = (horizontal > 0.01f) ? 90f : 270f;
+                } else
+                {
+                    rotation = (vertical > 0.01f) ? 180f : 0f;
+                }
+                
+                
+                playerTrigger.transform.localEulerAngles = new Vector3(0f, 0f, rotation);
+                wallBump = 0;
+            } else
+            {
+                wallBump = 0;
+                switch (Random.Range(0, 4))
+                {
+                    case 0:
+                        // up
+                        playerTrigger.transform.localEulerAngles = new Vector3(0f, 0f, 180f);
+                        vertical = 1;
+                        horizontal = 0;
+                        break;
+                    case 1:
+                        // right
+                        playerTrigger.transform.localEulerAngles = new Vector3(0f, 0f, 90f);
+                        vertical = 0;
+                        horizontal = 1;
+                        break;
+                    case 2:
+                        // down
+                        playerTrigger.transform.localEulerAngles = new Vector3(0f, 0f, 0f);
+                        vertical = -1;
+                        horizontal = 0;
+                        break;
+                    case 3:
+                        // left
+                        playerTrigger.transform.localEulerAngles = new Vector3(0f, 0f, 270f);
+                        vertical = 0;
+                        horizontal = -1;
+                        break;
+                    default:
+                        break;
+                }
             }
+            waitTime = Random.Range(1f, 3f);
             moveDirection = new Vector2(horizontal, vertical);
             animator.SetFloat("Horizontal", horizontal);
             animator.SetFloat("Vertical", vertical);

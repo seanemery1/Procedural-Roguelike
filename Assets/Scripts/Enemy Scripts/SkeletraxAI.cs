@@ -1,20 +1,31 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
+using TMPro;
 
 // Inherits methods and variables from the Enemy class
 public class SkeletraxAI : Enemy
 {
+    // Max Health Variable for UI
+    int maxHealth;
+    GameObject bossUI;
     // Extra variables used to detect if a player enter the same room where the boss resides.
     public BoxCollider2D boxCollider;
     public RectInt room;
+    bool playBossMusic;
    
     // Initializing all the variables before the first frame is called.
     void Start()
     {
+        name = "Skeletrax";
         boxCollider = GetComponentInChildren<BoxCollider2D>();
         boxCollider.size = room.size;
         health = 20;
+        maxHealth = health;
+        bossUI = GameObject.FindGameObjectWithTag("BossHP");
+        bossUI.SetActive(false);
+        playBossMusic = false;
         currentState = EnemyState.idle;
     }
 
@@ -40,18 +51,37 @@ public class SkeletraxAI : Enemy
     {
         if (collision.CompareTag("Player"))
         {
-            FindObjectOfType<MusicSoundManager>().ChangeMusic("bossMusic");
+            if (!playBossMusic)
+            {
+                FindObjectOfType<MusicSoundManager>().ChangeMusic("bossMusic");
+                playBossMusic = true;
+            }
+            
+            bossUI.SetActive(true);
+            if (!bossUI.Equals(null))
+            {
+                bossUI.GetComponentInChildren<TMP_Text>().text = name;
+                bossUI.GetComponentInChildren<Slider>().maxValue = maxHealth;
+                bossUI.GetComponentInChildren<Slider>().value = health;
+            }
+            
+        }
+    }
+    // Method to update the boss' health bar while player is nearby.
+    private void OnTriggerStay2D(Collider2D collision)
+    {
+        if (collision.CompareTag("Player"))
+        {
+            if (!bossUI.Equals(null))
+            {
+                bossUI.GetComponentInChildren<TMP_Text>().text = name;
+                bossUI.GetComponentInChildren<Slider>().maxValue = maxHealth;
+                bossUI.GetComponentInChildren<Slider>().value = health;
+            }
         }
     }
 
-    //// If hit by player's attack, call GetHit() method
-    //private void OnCollisionEnter2D(Collision2D collision)
-    //{
-    //    if (collision.collider.CompareTag("PlayerAttack"))
-    //    {
-    //        GetHit();
-    //    }
-    //}
+
 
     // Method to called by a player's class when the enemy gets hit by a player. Reduces enemy health by 1 and plays appropriate damage taken/death animation and sound effects.
     private IEnumerator FlashCo(bool death)

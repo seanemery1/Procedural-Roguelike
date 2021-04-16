@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+// Sound Manager for short sound effects (everything but the music)
 public class SoundManager : MonoBehaviour
 {
     // Variables to store all the sound effects that will be used.

@@ -4,30 +4,34 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
+// Keeps track of the player's stats and what information should be displayed on the HUD/UI
 public class PlayerStats : MonoBehaviour
 {
+    // Variables declaration/initialization
     [Header("Player Stats")]
     public int health = 6;
-    public int numOfHearts = 6;
+    [SerializeField] private int numOfHearts = 6;
 
-    public Image[] hearts;
-    public Sprite fullHeart;
-    public Sprite halfHeart;
-    public Sprite emptyHeart;
+    [SerializeField] private Image[] hearts;
+    [SerializeField] private Sprite fullHeart;
+    [SerializeField] private Sprite halfHeart;
+    [SerializeField] private Sprite emptyHeart;
     public TMP_Text numsOfKeysText; 
     public bool dmgImmunity = false;
 
-    public Image key;
-    public Sprite keySprite;
+    [SerializeField] private Image key;
+    [SerializeField] private Sprite keySprite;
     public int numsOfKeys;
-    public GameObject UI;
-    // Start is called before the first frame update
+    [SerializeField] private GameObject UI;
+    
+    // Initialize UI key element to 0
     public void Start()
     {
         numsOfKeys = 0;
         numsOfKeysText.text = "x" + numsOfKeys.ToString();
     }
 
+    // Detects when player has collided with either a key or health, plays corresponding sound effects and increases player's stats
     private void OnCollisionEnter2D(Collision2D other)
     {
         if (other.collider.CompareTag("Key"))
@@ -46,6 +50,8 @@ public class PlayerStats : MonoBehaviour
             other.gameObject.SetActive(false);
         }
     }
+
+    // Used to decrement numsOfKey if a door was successfully opened
     public bool useKeyOnDoor()
     {
         if (numsOfKeys>0)
@@ -62,13 +68,15 @@ public class PlayerStats : MonoBehaviour
         }
     }
   
-
+    // Updates the player's stats for the HUD/UI every frame
     void Update()
     {
+        // If a player collects more hearts than the maximimum number of hearts, then make health = max hearts
         if (health>numOfHearts)
         {
             health = numOfHearts;
         }
+        // Using a Div 2 function to determine whether the UI should display a half heart (1 health) or a full heart (2 health)
         for (int i = 0; i < hearts.Length*2; i = i + 2)
         {
             if (i < health)

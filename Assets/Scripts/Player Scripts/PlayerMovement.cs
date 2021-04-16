@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
+// A generic enum class that is used to identify the player's current state (a state machine)
 public enum PlayerState
 {
     walk,
@@ -41,7 +42,6 @@ public class PlayerMovement : MonoBehaviour
     {
         if (collision.collider.CompareTag("Enemy"))
         {
-            
             Physics2D.IgnoreLayerCollision(9, 10, true);
             if (playerStats.health==1)
             {
@@ -58,6 +58,7 @@ public class PlayerMovement : MonoBehaviour
                 // Death animation
             } else
             {
+                
                 SoundManager.PlaySound("playerHit");
                 playerCombat.combatEnabled = false;
                 StartCoroutine(FlashCo(false));
@@ -143,6 +144,16 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
+    // Function called by an Attack animation event to disable movement during attacks.
+    void DisableMovement()
+    {
+        disableMovement = true;
+    }
+    // Function called by an Attack animation event to renenable movement after an attack finishes.
+    void EnableMovement()
+    {
+        disableMovement = false;
+    }
     // Async coroutine to be called when the player is hit.
     // Plays a flashing red animation. If the player is supposed to die after being hit, permanently make the character red (in preparation for the Game Over screen).
     private IEnumerator FlashCo(bool isDead)
@@ -182,9 +193,6 @@ public class PlayerMovement : MonoBehaviour
         animator.SetFloat("Magnitude", 0);
         animator.SetBool("isDead", true);
 
-        // Restores physics collision
-        Physics2D.IgnoreLayerCollision(9, 10, false);
-
         // Manually sets animation variables to make the player rotate 90 at fixed time intervals for some number of loops.
         int temp = 0;
         while (temp < numberOfFlashes)
@@ -206,7 +214,9 @@ public class PlayerMovement : MonoBehaviour
         // Manually set player's final animation frame to look down (0, -1).
         animator.SetFloat("LastVert", -1);
         animator.SetFloat("LastHorizon", 0);
-        
+
+        // Restores physics collision
+        Physics2D.IgnoreLayerCollision(9, 10, false);
     }
 
     // Async coroutine to temporarily disable all collisions with enemies and disable attacking.
