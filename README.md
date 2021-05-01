@@ -21,6 +21,7 @@ s - Move Down
 
 D - Move Right
 
+
 Alternative Movement:
 
 Up Arrow - Move Up
@@ -31,11 +32,13 @@ Down Arrow - Move Down
 
 Right Arrow - Move Right
 
+
 Abilities:
 
 J - Attack
 
 K - Open Door (only if the player has a key and is standing in front of the door)
+
 
 Misc:
 
