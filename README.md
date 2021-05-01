@@ -9,37 +9,37 @@ https://seanemery1.github.io/PDF-Procedural-Roguelike/
 # Controls
 Main Menu/Pause Menu Navigation:
 
-Mouse only
+- Mouse only
 
 Movement:
 
-W - Move Up
+- W - Move Up
 
-A - Move Left
+- A - Move Left
 
-s - Move Down
+- S - Move Down
 
-D - Move Right
+- D - Move Right
 
 
 Alternative Movement:
 
-Up Arrow - Move Up
+- Up Arrow - Move Up
 
-Left Arrow  - Move Left
+- Left Arrow  - Move Left
 
-Down Arrow - Move Down
+- Down Arrow - Move Down
 
-Right Arrow - Move Right
+- Right Arrow - Move Right
 
 
 Abilities:
 
-J - Attack
+- J - Attack
 
-K - Open Door (only if the player has a key and is standing in front of the door)
+- K - Open Door (only if the player has a key and is standing in front of the door)
 
 
 Misc:
 
-Esc - Pause
+- Esc - Pause
