@@ -1,6 +1,7 @@
 # Project Information
 https://seanemery1.github.io/PDF-Procedural-Roguelike/
 
+![Preview Image](https://seanemery1.github.io/PDF-Procedural-Roguelike/Images/previewBossfight.png)
 
 # Setup Instrunctions
 1. Download the latest beta version of Unity which supports the Universal Render Pipeline
