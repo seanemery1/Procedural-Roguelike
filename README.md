@@ -1,5 +1,7 @@
 # Project Information
-https://seanemery1.github.io/PDF-Procedural-Roguelike/
+Technical Paper: https://seanemery1.github.io/PDF-Procedural-Roguelike/
+Web Release: https://semery.itch.io/procedural-bone-dungeon
+*Note: Game is GPU intensive due to realtime lighting, framerate may suffer on weaker hardware*
 
 ![Preview Image](https://seanemery1.github.io/PDF-Procedural-Roguelike/Images/previewBossfight.png)
 
@@ -36,11 +38,9 @@ Alternative Movement:
 - Down Arrow - Move Down
 - Right Arrow - Move Right
 
-
 Abilities:
 - J - Attack
 - K - Open Door (only if the player has a key and is standing in front of the door)
-
 
 Misc:
 - Esc - Pause
