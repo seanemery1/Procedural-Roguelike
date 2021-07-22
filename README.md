@@ -1,6 +1,8 @@
 # Project Information
 Technical Paper: https://seanemery1.github.io/PDF-Procedural-Roguelike/
+
 Web Release: https://semery.itch.io/procedural-bone-dungeon
+
 *Note: Game is GPU intensive due to realtime lighting, framerate may suffer on weaker hardware*
 
 ![Preview Image](https://seanemery1.github.io/PDF-Procedural-Roguelike/Images/previewBossfight.png)
