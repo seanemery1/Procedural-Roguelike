@@ -7,7 +7,7 @@ Web Release: https://semery.itch.io/procedural-bone-dungeon
 
 ![Preview Image](https://seanemery1.github.io/PDF-Procedural-Roguelike/Images/previewBossfight.png)
 
-# Setup Instrunctions
+# Setup Instructions
 1. Download the latest beta version of Unity which supports the Universal Render Pipeline.
 2. Clone repo, then compile the game to your desired platform on the Unity Editor.
 
